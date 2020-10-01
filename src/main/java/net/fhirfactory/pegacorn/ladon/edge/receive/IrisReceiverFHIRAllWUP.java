@@ -22,7 +22,7 @@ public class IrisReceiverFHIRAllWUP extends LadonEdgeIPCReceiverWUPTemplate {
 
     @Override
     protected String specifyIngresTopologyEndpointName() {
-        return (this.getSubsystemComponentNamesService().getLadonEdgeReceiveFhirAllFromIris());
+        return ("endpoint no no");
     }
 
     @Override
