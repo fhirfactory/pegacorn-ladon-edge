@@ -27,16 +27,7 @@ import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.CareTeamProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.GroupProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.HealthCareServiceProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.LocationProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.OrganizationProxy;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PatientProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PractitionerProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PractitionerRoleProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.ValueSetProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
