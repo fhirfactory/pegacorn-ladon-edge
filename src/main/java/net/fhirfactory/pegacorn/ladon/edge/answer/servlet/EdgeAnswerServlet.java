@@ -21,20 +21,22 @@
  */
 package net.fhirfactory.pegacorn.ladon.edge.answer.servlet;
 
-import ca.uhn.fhir.context.FhirContext;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.servlet.annotation.WebServlet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PatientProxy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import javax.servlet.annotation.WebServlet;
-import java.util.ArrayList;
-import java.util.List;
+import net.fhirfactory.pegacorn.util.FhirUtil;
 
 @WebServlet(name="LadonEdgeAnswerServlet")
 public class EdgeAnswerServlet extends RestfulServer {
@@ -49,7 +51,7 @@ public class EdgeAnswerServlet extends RestfulServer {
      */
 
     public EdgeAnswerServlet() {
-        super(FhirContext.forR4()); // This is an R4 server
+        super(FhirUtil.getInstance().getFhirContext()); // This is an R4 server
     }
 
     /**
