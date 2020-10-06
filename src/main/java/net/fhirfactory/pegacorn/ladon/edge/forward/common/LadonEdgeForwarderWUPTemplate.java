@@ -32,44 +32,13 @@ import java.util.Set;
 
 public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingGatewayWUP {
 
-    @Inject
-    CamelContext camelCTX;
-
-    @Inject
-    private IPCPacketFramingConstants framingConstants;
-
-    @Override
-    protected void executePostInitialisationActivities(){
-        // Define Delimeters
-        ByteBuf ipcFrameEnd = Unpooled.copiedBuffer(framingConstants.getIpcPacketFrameEnd(), CharsetUtil.UTF_8);
-        ByteBuf[] delimiterSet = new ByteBuf[1];
-        delimiterSet[0] = ipcFrameEnd;
-        DelimiterBasedFrameDecoder ipcFrameBasedDecoder = new DelimiterBasedFrameDecoder(
-                framingConstants.getIpcPacketMaximumFrameSize(), true, delimiterSet);
-        StringDecoder stringDecoder = new StringDecoder();
-        // Register the new Decoder
-        Registry registry = camelCTX.getRegistry();
-        registry.bind("ipcFrameDecoder", ipcFrameBasedDecoder);
-        registry.bind("stringDecode", stringDecoder);
-        List<ChannelHandler> decoders = new ArrayList<ChannelHandler>();
-        decoders.add(ipcFrameBasedDecoder);
-        decoders.add(stringDecoder);
-        registry.bind("decoders", decoders);
-        // Register stringEncoder
-        StringEncoder stringEncoder = new StringEncoder();
-        registry.bind("stringEncoder", stringEncoder);
-        List<ChannelHandler> encoders = new ArrayList<ChannelHandler>();
-        encoders.add(stringEncoder);
-        registry.bind("encoders", encoders);
-    }
-
     @Override
     public void configure() throws Exception {
         getLogger().info("EdgeIPCForwarderWUPTemplate :: WUPIngresPoint/ingresFeed --> {}", this.ingresFeed());
         getLogger().info("EdgeIPCForwarderWUPTemplate :: WUPEgressPoint/egressFeed --> {}", this.egressFeed());
 
         from(ingresFeed())
-                .routeId(getWupInstanceName()+"-Main")
+                .routeId(getNameSet().getRouteCoreWUP())
                 .log(LoggingLevel.INFO, "Incoming Raw Message --> ${body}")
                 .bean(InterProcessingPlantHandoverPacketGenerationBean.class, "constructInterProcessingPlantHandoverPacket(*,  Exchange," + this.getWupTopologyNodeElement().extractNodeKey() + ")")
                 .bean(InterProcessingPlantHandoverPacketEncoderBean.class, "handoverPacketEncode")
@@ -120,8 +89,8 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
     }
 
     @Override
-    protected String specifyEndpointProtocolLeadout() {
-        return ("?allowDefaultCodec=false&decoders=#ipcFrameDecoder&encoders=#encoders&keepAlive=true");
+    protected String specifyWUPWorkshop(){
+        return("Edge");
     }
 
     @Override
@@ -134,8 +103,4 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
         return ("tcp");
     }
 
-    @Override
-    protected String specifyWUPWorkshop(){
-        return("Edge");
-    }
 }
