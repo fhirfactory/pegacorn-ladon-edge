@@ -1,35 +1,117 @@
 package net.fhirfactory.pegacorn.ladon.edge.forward.common;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
+import io.netty.util.CharsetUtil;
+import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverFinisherBean;
+import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketEncoderBean;
+import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketGenerationBean;
+import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketResponseDecoder;
+import net.fhirfactory.pegacorn.petasos.ipc.model.IPCPacketFramingConstants;
+import net.fhirfactory.pegacorn.petasos.model.processingplant.DefaultWorkshopSetEnum;
 import net.fhirfactory.pegacorn.petasos.model.topics.TopicToken;
 import net.fhirfactory.pegacorn.petasos.model.topology.EndpointElement;
 import net.fhirfactory.pegacorn.petasos.model.topology.NodeElement;
 import net.fhirfactory.pegacorn.petasos.model.topology.NodeElementTypeEnum;
 import net.fhirfactory.pegacorn.petasos.wup.archetypes.EdgeEgressMessagingGatewayWUP;
+import org.apache.camel.CamelContext;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.component.netty.codec.DelimiterBasedFrameDecoder;
+import org.apache.camel.spi.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingGatewayWUP {
-    private static final Logger LOG = LoggerFactory.getLogger(LadonEdgeForwarderWUPTemplate.class);
+
+    @Inject
+    CamelContext camelCTX;
+
+    @Inject
+    private IPCPacketFramingConstants framingConstants;
+
+    @Override
+    protected void executePostInitialisationActivities(){
+        // Define Delimeters
+        ByteBuf ipcFrameEnd = Unpooled.copiedBuffer(framingConstants.getIpcPacketFrameEnd(), CharsetUtil.UTF_8);
+        ByteBuf[] delimiterSet = new ByteBuf[1];
+        delimiterSet[0] = ipcFrameEnd;
+        DelimiterBasedFrameDecoder ipcFrameBasedDecoder = new DelimiterBasedFrameDecoder(
+                framingConstants.getIpcPacketMaximumFrameSize(), true, delimiterSet);
+        StringDecoder stringDecoder = new StringDecoder();
+        // Register the new Decoder
+        Registry registry = camelCTX.getRegistry();
+        registry.bind("ipcFrameDecoder", ipcFrameBasedDecoder);
+        registry.bind("stringDecode", stringDecoder);
+        List<ChannelHandler> decoders = new ArrayList<ChannelHandler>();
+        decoders.add(ipcFrameBasedDecoder);
+        decoders.add(stringDecoder);
+        registry.bind("decoders", decoders);
+        // Register stringEncoder
+        StringEncoder stringEncoder = new StringEncoder();
+        registry.bind("stringEncoder", stringEncoder);
+        List<ChannelHandler> encoders = new ArrayList<ChannelHandler>();
+        encoders.add(stringEncoder);
+        registry.bind("encoders", encoders);
+    }
 
     @Override
     public void configure() throws Exception {
+        getLogger().info("EdgeIPCForwarderWUPTemplate :: WUPIngresPoint/ingresFeed --> {}", this.ingresFeed());
+        getLogger().info("EdgeIPCForwarderWUPTemplate :: WUPEgressPoint/egressFeed --> {}", this.egressFeed());
 
+        from(ingresFeed())
+                .routeId(getWupInstanceName()+"-Main")
+                .log(LoggingLevel.INFO, "Incoming Raw Message --> ${body}")
+                .bean(InterProcessingPlantHandoverPacketGenerationBean.class, "constructInterProcessingPlantHandoverPacket(*,  Exchange," + this.getWupTopologyNodeElement().extractNodeKey() + ")")
+                .bean(InterProcessingPlantHandoverPacketEncoderBean.class, "handoverPacketEncode")
+                .to(specifyEgressEndpoint())
+                .transform(simple("${bodyAs(String)}"))
+                .log(LoggingLevel.INFO, "Response Raw Message --> ${body}")
+                .bean(InterProcessingPlantHandoverPacketResponseDecoder.class, "contextualiseInterProcessingPlantHandoverResponsePacket(*,  Exchange," + this.getWupTopologyNodeElement().extractNodeKey() + ")")
+                .bean(InterProcessingPlantHandoverFinisherBean.class, "ipcSenderNotifyActivityFinished(*, Exchange," + this.getWupTopologyNodeElement().extractNodeKey() + ")");
     }
 
-    @Override
-    protected String specifyEgressEndpointVersion() {
-        return(specifyTargetEndpointVersion());
-    }
+    protected abstract String specifyTargetSubsystem();
+    protected abstract String specifyTargetSubsystemVersion();
+    protected abstract String specifyTargetEndpointName();
+    protected abstract String specifyTargetEndpointVersion();
+    protected abstract String specifyTargetService();
+    protected abstract String specifyTargetProcessingPlant();
 
     @Override
-    protected String specifyEgressEndpoint(){
-        LOG.debug(".specifyEgressEndpoint(): Entry");
-        String egressEndPoint = null;
-        LOG.debug(".specifyIngresEndpoint(): Exit, egressEndPoint --> {}", egressEndPoint);
-        return(egressEndPoint);
+    protected String deriveTargetEndpointDetails(){
+        getLogger().debug(".deriveTargetEndpointDetails(): Entry");
+        getLogger().trace(".deriveTargetEndpointDetails(): Target Subsystem Name --> {}, Target Subsystem Version --> {}", specifyTargetSubsystem(), specifyTargetSubsystemVersion());
+        NodeElement targetSubsystem = getTopologyServer().getNode(specifyTargetSubsystem(), NodeElementTypeEnum.SUBSYSTEM, specifyTargetSubsystemVersion());
+        getLogger().trace(".deriveTargetEndpointDetails(): Target Subsystem (NodeElement) --> {}", targetSubsystem);
+        NodeElement targetNode;
+        switch(targetSubsystem.getResilienceMode()){
+            case RESILIENCE_MODE_MULTISITE:
+            case RESILIENCE_MODE_CLUSTERED:{
+                targetNode = getTopologyServer().getNode(specifyTargetService(), NodeElementTypeEnum.SERVICE, specifyTargetSubsystemVersion());
+                break;
+            }
+            case RESILIENCE_MODE_STANDALONE:
+            default:{
+                targetNode = getTopologyServer().getNode(specifyTargetProcessingPlant(), NodeElementTypeEnum.PROCESSING_PLANT, specifyTargetSubsystemVersion());
+            }
+        }
+        getLogger().trace(".deriveTargetEndpointDetails(): targetNode --> {}", targetNode);
+        getLogger().trace(".deriveTargetEndpointDetails(): targetEndpointName --> {}, targetEndpointVersion --> {}", specifyTargetEndpointName(), specifyTargetEndpointVersion());
+        EndpointElement endpoint = getTopologyServer().getEndpoint(targetNode, specifyTargetEndpointName(), specifyTargetEndpointVersion());
+        getLogger().trace(".deriveTargetEndpointDetails(): targetEndpoint (EndpointElement) --> {}", endpoint);
+        String endpointDetails = endpoint.getHostname() + ":" + endpoint.getExposedPort();
+        getLogger().debug(".deriveTargetEndpointDetails(): Exit, endpointDetails --> {}", endpointDetails);
+        return(endpointDetails);
     }
 
     @Override
@@ -38,58 +120,18 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
     }
 
     @Override
-    protected String specifyEndpointProtocol() {
-        return "tcp";
+    protected String specifyEndpointProtocolLeadout() {
+        return ("?allowDefaultCodec=false&decoders=#ipcFrameDecoder&encoders=#encoders&keepAlive=true");
     }
 
     @Override
     protected String specifyEndpointProtocolLeadIn() {
-        return "//";
+        return ("://");
     }
 
     @Override
-    protected String specifyEndpointProtocolLeadout() {
-        return null;
-    }
-
-    @Override
-    public Set<TopicToken> specifySubscriptionTopics() {
-        HashSet<TopicToken> myTopicSet = new HashSet<TopicToken>();
-        String[] entityNames = { "Bundle" };
-        for(String entityName: entityNames){
-            TopicToken topicId = getFHIRTopicIDBuilder().createTopicToken(entityName, "4.0.1");
-            myTopicSet.add(topicId);
-        }
-        return(myTopicSet);
-    }
-
-    abstract protected String specifyTargetSubsystem();
-
-    abstract protected String specifyTargetSubsystemVersion();
-
-    abstract protected String specifyTargetEndpointName();
-
-    abstract protected String specifyTargetEndpointVersion();
-
-    private String deriveTargetEndpointDetails(){
-        LOG.debug(".deriveTargetEndpointDetails(): Entry");
-        NodeElement targetSubsystem = getTopologyServer().getNode(specifyTargetEndpointName(), NodeElementTypeEnum.SUBSYSTEM, specifyTargetSubsystemVersion());
-        NodeElement targetNode;
-        switch(targetSubsystem.getResilienceMode()){
-            case RESILIENCE_MODE_MULTISITE:
-            case RESILIENCE_MODE_CLUSTERED:{
-                targetNode = getTopologyServer().getNode(specifyTargetEndpointName(), NodeElementTypeEnum.SERVICE, specifyTargetSubsystemVersion());
-                break;
-            }
-            case RESILIENCE_MODE_STANDALONE:
-            default:{
-                targetNode = getTopologyServer().getNode(specifyTargetEndpointName(), NodeElementTypeEnum.PROCESSING_PLANT, specifyTargetSubsystemVersion());
-            }
-        }
-        EndpointElement endpoint = getTopologyServer().getEndpoint(targetNode, specifyTargetEndpointName(), specifyTargetEndpointVersion());
-        String endpointDetails = endpoint.getHostname() + ":" + endpoint.getExposedPort();
-        LOG.debug(".deriveTargetEndpointDetails(): Exit");
-        return(endpointDetails);
+    protected String specifyEndpointProtocol() {
+        return ("tcp");
     }
 
     @Override
