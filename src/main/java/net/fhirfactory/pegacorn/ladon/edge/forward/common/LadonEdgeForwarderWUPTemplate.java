@@ -10,6 +10,9 @@ import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHan
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketEncoderBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketGenerationBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketResponseDecoder;
+import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCDelimiterBasedDecoderFactory;
+import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCStringBasedDecoderFactory;
+import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCStringBasedEncoderFactory;
 import net.fhirfactory.pegacorn.petasos.ipc.model.IPCPacketFramingConstants;
 import net.fhirfactory.pegacorn.petasos.model.processingplant.DefaultWorkshopSetEnum;
 import net.fhirfactory.pegacorn.petasos.model.topics.TopicToken;
@@ -31,6 +34,9 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingGatewayWUP {
+
+    @Inject
+    CamelContext camelCTX;
 
     @Override
     public void configure() throws Exception {
@@ -101,6 +107,33 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
     @Override
     protected String specifyEndpointProtocol() {
         return ("tcp");
+    }
+
+    @Override
+    protected void executePostInitialisationActivities(){
+        IPCDelimiterBasedDecoderFactory ipcDelimiterDecoderFactory = new IPCDelimiterBasedDecoderFactory();
+        IPCStringBasedDecoderFactory ipcStringDecoderFactory = new IPCStringBasedDecoderFactory();
+        IPCStringBasedEncoderFactory ipcStringEncoderFactory = new IPCStringBasedEncoderFactory();
+
+        Registry registry = camelCTX.getRegistry();
+
+        registry.bind("ipcFrameDecoder", ipcDelimiterDecoderFactory);
+        registry.bind("ipcStringDecoder", ipcStringDecoderFactory);
+
+        List<ChannelHandler> decoders = new ArrayList<ChannelHandler>();
+        decoders.add(ipcDelimiterDecoderFactory);
+        decoders.add(ipcStringDecoderFactory);
+        registry.bind("decoders", decoders);
+
+        registry.bind("ipcStringEncoder", ipcStringEncoderFactory);
+        List<ChannelHandler> encoders = new ArrayList<>();
+        encoders.add(ipcStringEncoderFactory);
+        registry.bind("encoders", encoders);
+    }
+
+    @Override
+    protected String specifyEndpointProtocolLeadout() {
+        return ("?allowDefaultCodec=false&decoders=#ipcFrameDecoder&encoders=#ipcStringEncoder&keepAlive=false");
     }
 
 }
