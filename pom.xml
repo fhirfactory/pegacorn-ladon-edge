@@ -150,6 +150,12 @@
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
+        <!-- Pegacorn Building Blocks Edge -->
+        <dependency>
+            <groupId>net.fhirfactory.pegacorn</groupId>
+            <artifactId>pegacorn-buildingblocks-edge</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Pegacorn Ladon DTCache Services -->
         <dependency>
             <groupId>net.fhirfactory.pegacorn</groupId>
