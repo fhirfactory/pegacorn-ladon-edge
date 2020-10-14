@@ -1,39 +1,18 @@
 package net.fhirfactory.pegacorn.ladon.edge.receive.common;
 
+import org.apache.camel.CamelContext;
+import org.apache.camel.ExchangePattern;
+import org.apache.camel.LoggingLevel;
+
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverPacketDecoderBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverRegistrationBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverResponseEncoderBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverResponseGenerationBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverUoWExtractionBean;
-import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCPacketDecoderInitializerFactory;
 import net.fhirfactory.pegacorn.petasos.wup.archetypes.EdgeIngresMessagingGatewayWUP;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ExchangePattern;
-import org.apache.camel.LoggingLevel;
-import org.apache.camel.component.netty.ServerInitializerFactory;
-import org.apache.camel.spi.Registry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
+import net.fhirfactory.pegacorn.platform.edge.receive.common.DefaultFHIRBundleFromLadonReceiver;
 
 public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagingGatewayWUP {
-
-    @Override
-    protected String specifyEndpointComponentDefinition() {
-        return ("netty");
-    }
-
-    @Override
-    protected String specifyEndpointProtocolLeadIn() {
-        return ("://");
-    }
-
-    @Override
-    protected String specifyEndpointProtocol() {
-        return ("tcp");
-    }
-
 
     private String getWUPContinuityRoute() {
         return ("seda:" + this.getNameSet().getRouteCoreWUP() + ".InnerWUP.Continuity");
@@ -53,7 +32,7 @@ public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagin
         getLogger().debug("EdgeIPCReceiverWUPTemplate::configure(): hostname --> {}", this.getIngresTopologyEndpointElement().getHostname());
         getLogger().debug("EdgeIPCReceiverWUPTemplate::configure(): port --> {}", this.getIngresTopologyEndpointElement().getExposedPort());
 
-        from(this.ingresFeed())
+        fromWithStandardExceptionHandling(this.ingresFeed())
                 .routeId(this.getNameSet().getRouteCoreWUP())
                 .transform(simple("${bodyAs(String)}"))
                 .log(LoggingLevel.INFO, "Incoming Message --> ${body}")
@@ -63,7 +42,7 @@ public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagin
                 .bean(InterProcessingPlantHandoverResponseGenerationBean.class, "generateInterProcessingPlantHandoverResponse(*,  Exchange," + this.getWupTopologyNodeElement().extractNodeKey() + ")")
                 .bean(InterProcessingPlantHandoverResponseEncoderBean.class, "responseEncoder(*)");
 
-        from(getWUPContinuityRoute())
+        fromWithStandardExceptionHandling(getWUPContinuityRoute())
                 .bean(InterProcessingPlantHandoverUoWExtractionBean.class, "extractUoW(*, Exchange)")
                 .to(egressFeed());
     }
@@ -73,4 +52,10 @@ public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagin
         return ("Edge");
     }
 
+    protected abstract CamelContext getCamelCtx();
+    
+    @Override
+    protected void executePostInitialisationActivities(){
+        DefaultFHIRBundleFromLadonReceiver.executePostInitialisationActivities(getCamelCtx(), specifyServerInitializerFactoryName());
+    }
 }

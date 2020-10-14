@@ -1,37 +1,19 @@
 package net.fhirfactory.pegacorn.ladon.edge.forward.common;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.util.CharsetUtil;
+import javax.inject.Inject;
+
+import org.apache.camel.CamelContext;
+import org.apache.camel.LoggingLevel;
+
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverFinisherBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketEncoderBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketGenerationBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketResponseDecoder;
-import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCDelimiterBasedDecoderFactory;
-import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCStringBasedDecoderFactory;
-import net.fhirfactory.pegacorn.petasos.ipc.codecs.IPCStringBasedEncoderFactory;
-import net.fhirfactory.pegacorn.petasos.ipc.model.IPCPacketFramingConstants;
-import net.fhirfactory.pegacorn.petasos.model.processingplant.DefaultWorkshopSetEnum;
-import net.fhirfactory.pegacorn.petasos.model.topics.TopicToken;
 import net.fhirfactory.pegacorn.petasos.model.topology.EndpointElement;
 import net.fhirfactory.pegacorn.petasos.model.topology.NodeElement;
 import net.fhirfactory.pegacorn.petasos.model.topology.NodeElementTypeEnum;
 import net.fhirfactory.pegacorn.petasos.wup.archetypes.EdgeEgressMessagingGatewayWUP;
-import org.apache.camel.CamelContext;
-import org.apache.camel.LoggingLevel;
-import org.apache.camel.component.netty.codec.DelimiterBasedFrameDecoder;
-import org.apache.camel.spi.Registry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import net.fhirfactory.pegacorn.platform.edge.forward.common.EdgeIPCForwarderWUPTemplate;
 
 public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingGatewayWUP {
 
@@ -40,10 +22,10 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
 
     @Override
     public void configure() throws Exception {
-        getLogger().info("EdgeIPCForwarderWUPTemplate :: WUPIngresPoint/ingresFeed --> {}", this.ingresFeed());
-        getLogger().info("EdgeIPCForwarderWUPTemplate :: WUPEgressPoint/egressFeed --> {}", this.egressFeed());
+        getLogger().info("LadonEdgeForwarderWUPTemplate :: WUPIngresPoint/ingresFeed --> {}", this.ingresFeed());
+        getLogger().info("LadonEdgeForwarderWUPTemplate :: WUPEgressPoint/egressFeed --> {}", this.egressFeed());
 
-        from(ingresFeed())
+        fromWithStandardExceptionHandling(ingresFeed())
                 .routeId(getNameSet().getRouteCoreWUP())
                 .log(LoggingLevel.INFO, "Incoming Raw Message --> ${body}")
                 .bean(InterProcessingPlantHandoverPacketGenerationBean.class, "constructInterProcessingPlantHandoverPacket(*,  Exchange," + this.getWupTopologyNodeElement().extractNodeKey() + ")")
@@ -90,50 +72,12 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
     }
 
     @Override
-    protected String specifyEndpointComponentDefinition() {
-        return ("netty");
-    }
-
-    @Override
     protected String specifyWUPWorkshop(){
         return("Edge");
     }
 
     @Override
-    protected String specifyEndpointProtocolLeadIn() {
-        return ("://");
-    }
-
-    @Override
-    protected String specifyEndpointProtocol() {
-        return ("tcp");
-    }
-
-    @Override
     protected void executePostInitialisationActivities(){
-        IPCDelimiterBasedDecoderFactory ipcDelimiterDecoderFactory = new IPCDelimiterBasedDecoderFactory();
-        IPCStringBasedDecoderFactory ipcStringDecoderFactory = new IPCStringBasedDecoderFactory();
-        IPCStringBasedEncoderFactory ipcStringEncoderFactory = new IPCStringBasedEncoderFactory();
-
-        Registry registry = camelCTX.getRegistry();
-
-        registry.bind("ipcFrameDecoder", ipcDelimiterDecoderFactory);
-        registry.bind("ipcStringDecoder", ipcStringDecoderFactory);
-
-        List<ChannelHandler> decoders = new ArrayList<ChannelHandler>();
-        decoders.add(ipcDelimiterDecoderFactory);
-        decoders.add(ipcStringDecoderFactory);
-        registry.bind("decoders", decoders);
-
-        registry.bind("ipcStringEncoder", ipcStringEncoderFactory);
-        List<ChannelHandler> encoders = new ArrayList<>();
-        encoders.add(ipcStringEncoderFactory);
-        registry.bind("encoders", encoders);
+        EdgeIPCForwarderWUPTemplate.executePostInitialisationActivities(camelCTX);
     }
-
-    @Override
-    protected String specifyEndpointProtocolLeadout() {
-        return ("?allowDefaultCodec=false&decoders=#ipcFrameDecoder&encoders=#ipcStringEncoder&keepAlive=false&clientMode=true");
-    }
-
 }
