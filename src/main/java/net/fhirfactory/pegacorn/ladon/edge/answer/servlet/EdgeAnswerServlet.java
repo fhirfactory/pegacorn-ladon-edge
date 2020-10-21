@@ -66,16 +66,16 @@ public class EdgeAnswerServlet extends RestfulServer {
          * type of resource.
          */
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
-/*        providers.add(new CareTeamProxy());
-        providers.add(new DocumentReferenceProxy());
-        providers.add(new GroupProxy());
-        providers.add(new HealthCareServiceProxy());
-        providers.add(new LocationProxy());
-        providers.add(new OrganizationProxy()); */
-        providers.add(patientProxy);
-/*        providers.add(new PractitionerProxy());
-        providers.add(new PractitionerRoleProxy());
-        providers.add(new ValueSetProxy()); */
+//        providers.add(new CareTeamProxy());
+            providers.add(new DocumentReferenceProxy());
+//        providers.add(new GroupProxy());
+//        providers.add(new HealthCareServiceProxy());
+//        providers.add(new LocationProxy());
+// providers.add(new OrganizationProxy()); */
+//        providers.add(patientProxy);
+//        providers.add(new PractitionerProxy());
+//        providers.add(new PractitionerRoleProxy());
+//        providers.add(new ValueSetProxy()); */
         setResourceProviders(providers);
 
         /*

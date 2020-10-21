@@ -14,6 +14,8 @@ import net.fhirfactory.pegacorn.platform.edge.receive.common.DefaultFHIRBundleFr
 
 public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagingGatewayWUP {
 
+    private String sourceSystem;
+
     private String getWUPContinuityRoute() {
         return ("seda:" + this.getNameSet().getRouteCoreWUP() + ".InnerWUP.Continuity");
     }
@@ -43,9 +45,11 @@ public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagin
                 .bean(InterProcessingPlantHandoverResponseEncoderBean.class, "responseEncoder(*)");
 
         fromWithStandardExceptionHandling(getWUPContinuityRoute())
-                .bean(InterProcessingPlantHandoverUoWExtractionBean.class, "extractUoW(*, Exchange)")
+                .bean(InterProcessingPlantHandoverUoWExtractionBean.class, "extractUoW(*, Exchange," + getSourceSubsystem() + ")")
                 .to(egressFeed());
     }
+
+    private String getSourceSubsystem(){return(sourceSystem);}
 
     @Override
     protected String specifyWUPWorkshop() {
@@ -57,5 +61,8 @@ public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagin
     @Override
     protected void executePostInitialisationActivities(){
         DefaultFHIRBundleFromLadonReceiver.executePostInitialisationActivities(getCamelCtx(), specifyServerInitializerFactoryName());
+        this.sourceSystem = specifySourceSubsystem();
     }
+
+    protected abstract String specifySourceSubsystem();
 }
