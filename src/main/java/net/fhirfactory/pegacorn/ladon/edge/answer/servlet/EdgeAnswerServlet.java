@@ -35,7 +35,10 @@ import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PatientProxy;
+import net.fhirfactory.pegacorn.platform.edge.ask.PegacornHapiFhirProxy;
+import net.fhirfactory.pegacorn.platform.edge.receive.common.ApiKeyValidatorInterceptor;
 import net.fhirfactory.pegacorn.util.FhirUtil;
 
 @WebServlet(name="LadonEdgeAnswerServlet")
@@ -86,10 +89,13 @@ public class EdgeAnswerServlet extends RestfulServer {
         INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
         getFhirContext().setNarrativeGenerator(narrativeGen);
 
+        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
+        registerInterceptor(apiKeyValidatorInterceptor);
+        
         /*
          * Use nice coloured HTML when a browser is used to request the content
          */
-        registerInterceptor(new ResponseHighlighterInterceptor());
+        registerInterceptor(new ResponseHighlighterInterceptor());        
         LOG.debug(".initialize(): Exit");
     }
 
