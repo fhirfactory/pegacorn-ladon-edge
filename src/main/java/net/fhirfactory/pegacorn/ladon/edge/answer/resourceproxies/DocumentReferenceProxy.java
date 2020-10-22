@@ -23,21 +23,23 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.DateRangeParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.ladon.dtcache.accessors.DocumentReferenceAccessor;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.PatientAccessor;
 import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeSeverityEnum;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonResourceProxy;
-import org.hl7.fhir.r4.model.DocumentReference;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
 
 @ApplicationScoped
 public class DocumentReferenceProxy extends LadonResourceProxy implements IResourceProvider {
@@ -57,7 +59,7 @@ public class DocumentReferenceProxy extends LadonResourceProxy implements IResou
     @PostConstruct
     private void initialisePatientProxy(){
         if(!this.isInitialised()) {
-            LOG.debug("DocumentReferenceProxy::initialisePatientProxy(): Entry, Initialising Services");
+            LOG.info("DocumentReferenceProxy::initialisePatientProxy(): Entry, Initialising Services");
             getLadonPlant().initialisePlant();
             getDocumentReferenceAccessor().initialiseServices();
             this.setInitialised(true);
@@ -141,5 +143,33 @@ public class DocumentReferenceProxy extends LadonResourceProxy implements IResou
             LOG.debug(".deleteDocumentReference(): Exit, Operation succeeded, resource did not exist. Outcome (MethodOutcome) -->", outcome);
         }
         return(outcome);
+    }
+
+    @Search()
+    public Bundle searchByDateAndType(@RequiredParam(name=DocumentReference.SP_DATE) DateRangeParam theRange, @RequiredParam(name= DocumentReference.SP_TYPE) TokenParam docRefType) {
+        LOG.debug(".searchByDateAndType(): Entry, DateTimeRange --> {}, Type --> {}", theRange, docRefType);
+
+        CodeableConcept docType = new CodeableConcept();
+        Coding docCoding = new Coding();
+        docCoding.setCode(docRefType.getValue());
+        docCoding.setSystem((docRefType.getSystem()));
+        docType.addCoding(docCoding);
+        docType.setText(docRefType.getValue());
+
+        Date fromDate = theRange.getLowerBoundAsInstant();
+        Date toDate = theRange.getUpperBoundAsInstant();
+
+        List<DocumentReference> docrefList = docRefAccessor.searchFor(docType, fromDate, false, toDate, true);
+
+        Bundle outputBundle = new Bundle();
+        outputBundle.setType(Bundle.BundleType.SEARCHSET);
+        outputBundle.setTimestamp(Date.from(Instant.now()));
+        outputBundle.setTotal(docrefList.size());
+        for(DocumentReference currentDocRef: docrefList){
+            Bundle.BundleEntryComponent bundleEntry = new Bundle.BundleEntryComponent();
+            bundleEntry.setResource(currentDocRef);
+            outputBundle.addEntry(bundleEntry);
+        }
+        return(outputBundle);
     }
 }

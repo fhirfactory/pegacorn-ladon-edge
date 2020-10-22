@@ -24,9 +24,11 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.servlet;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,13 +40,17 @@ import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PatientProxy;
 import net.fhirfactory.pegacorn.util.FhirUtil;
 
-@WebServlet(name="LadonEdgeAnswerServlet")
-public class EdgeAnswerServlet extends RestfulServer {
-    private static final Logger LOG = LoggerFactory.getLogger(EdgeAnswerServlet.class);
+
+public abstract class EdgeAnswerServlet extends RestfulServer {
+    abstract protected Logger getLogger();
+
     private static final long serialVersionUID = 1L;
 
     @Inject
     protected PatientProxy patientProxy;
+
+    @Inject
+    protected DocumentReferenceProxy docRefProxy;
 
     /**
      * Constructor
@@ -60,14 +66,14 @@ public class EdgeAnswerServlet extends RestfulServer {
      */
     @Override
     public void initialize() {
-        LOG.debug(".initialise(): entry");
+        getLogger().debug(".initialise(): entry");
         /*
          * Two resource providers are defined. Each one handles a specific
          * type of resource.
          */
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
 //        providers.add(new CareTeamProxy());
-            providers.add(new DocumentReferenceProxy());
+            providers.add(docRefProxy);
 //        providers.add(new GroupProxy());
 //        providers.add(new HealthCareServiceProxy());
 //        providers.add(new LocationProxy());
@@ -90,7 +96,7 @@ public class EdgeAnswerServlet extends RestfulServer {
          * Use nice coloured HTML when a browser is used to request the content
          */
         registerInterceptor(new ResponseHighlighterInterceptor());
-        LOG.debug(".initialize(): Exit");
+        getLogger().debug(".initialize(): Exit");
     }
 
 }
