@@ -1,10 +1,6 @@
 package net.fhirfactory.pegacorn.ladon.edge.forward.common;
 
-import javax.inject.Inject;
-
-import org.apache.camel.CamelContext;
-import org.apache.camel.LoggingLevel;
-
+import net.fhirfactory.pegacorn.ladon.model.twin.DigitalTwinIdentifier;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverFinisherBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketEncoderBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.sender.InterProcessingPlantHandoverPacketGenerationBean;
@@ -14,11 +10,18 @@ import net.fhirfactory.pegacorn.petasos.model.topology.NodeElement;
 import net.fhirfactory.pegacorn.petasos.model.topology.NodeElementTypeEnum;
 import net.fhirfactory.pegacorn.petasos.wup.archetypes.EdgeEgressMessagingGatewayWUP;
 import net.fhirfactory.pegacorn.platform.edge.forward.common.EdgeIPCForwarderWUPTemplate;
+import org.apache.camel.CamelContext;
+import org.apache.camel.LoggingLevel;
+
+import javax.inject.Inject;
 
 public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingGatewayWUP {
 
     @Inject
     CamelContext camelCTX;
+
+//    @Inject
+//    TwinInstance2EdgeForwarderMap twinInstance2ForwarderMap;
 
     @Override
     public void configure() throws Exception {
@@ -43,6 +46,7 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
     protected abstract String specifyTargetEndpointVersion();
     protected abstract String specifyTargetService();
     protected abstract String specifyTargetProcessingPlant();
+//    protected abstract DigitalTwinIdentifier specifyDigitalTwin();
 
     @Override
     protected String deriveTargetEndpointDetails(){
@@ -79,5 +83,6 @@ public abstract class LadonEdgeForwarderWUPTemplate extends EdgeEgressMessagingG
     @Override
     protected void executePostInitialisationActivities(){
         EdgeIPCForwarderWUPTemplate.executePostInitialisationActivities(camelCTX);
+//        twinInstance2ForwarderMap.addForwarderAssociation2DigitalTwin(specifyTargetSubsystem(), specifyDigitalTwin());
     }
 }

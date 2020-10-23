@@ -24,9 +24,11 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.servlet;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,16 +37,23 @@ import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PatientProxy;
+import net.fhirfactory.pegacorn.platform.edge.ask.PegacornHapiFhirProxy;
+import net.fhirfactory.pegacorn.platform.edge.receive.common.ApiKeyValidatorInterceptor;
 import net.fhirfactory.pegacorn.util.FhirUtil;
 
-@WebServlet(name="LadonEdgeAnswerServlet")
-public class EdgeAnswerServlet extends RestfulServer {
-    private static final Logger LOG = LoggerFactory.getLogger(EdgeAnswerServlet.class);
+
+public abstract class EdgeAnswerServlet extends RestfulServer {
+    abstract protected Logger getLogger();
+
     private static final long serialVersionUID = 1L;
 
     @Inject
     protected PatientProxy patientProxy;
+
+    @Inject
+    protected DocumentReferenceProxy docRefProxy;
 
     /**
      * Constructor
@@ -60,22 +69,22 @@ public class EdgeAnswerServlet extends RestfulServer {
      */
     @Override
     public void initialize() {
-        LOG.debug(".initialise(): entry");
+        getLogger().debug(".initialise(): entry");
         /*
          * Two resource providers are defined. Each one handles a specific
          * type of resource.
          */
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
-/*        providers.add(new CareTeamProxy());
-        providers.add(new DocumentReferenceProxy());
-        providers.add(new GroupProxy());
-        providers.add(new HealthCareServiceProxy());
-        providers.add(new LocationProxy());
-        providers.add(new OrganizationProxy()); */
-        providers.add(patientProxy);
-/*        providers.add(new PractitionerProxy());
-        providers.add(new PractitionerRoleProxy());
-        providers.add(new ValueSetProxy()); */
+//        providers.add(new CareTeamProxy());
+            providers.add(docRefProxy);
+//        providers.add(new GroupProxy());
+//        providers.add(new HealthCareServiceProxy());
+//        providers.add(new LocationProxy());
+// providers.add(new OrganizationProxy()); */
+//        providers.add(patientProxy);
+//        providers.add(new PractitionerProxy());
+//        providers.add(new PractitionerRoleProxy());
+//        providers.add(new ValueSetProxy()); */
         setResourceProviders(providers);
 
         /*
@@ -86,11 +95,14 @@ public class EdgeAnswerServlet extends RestfulServer {
         INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
         getFhirContext().setNarrativeGenerator(narrativeGen);
 
+        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
+        registerInterceptor(apiKeyValidatorInterceptor);
+        
         /*
          * Use nice coloured HTML when a browser is used to request the content
          */
-        registerInterceptor(new ResponseHighlighterInterceptor());
-        LOG.debug(".initialize(): Exit");
+        registerInterceptor(new ResponseHighlighterInterceptor());        
+        getLogger().debug(".initialize(): Exit");
     }
 
 }
