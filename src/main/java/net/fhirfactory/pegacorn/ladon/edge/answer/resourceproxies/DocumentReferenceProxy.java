@@ -26,53 +26,47 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.DocumentReferenceAccessor;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeGenerator;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeSeverityEnum;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonResourceProxy;
+import net.fhirfactory.pegacorn.fhir.operations.OperationOutcomeGenerator;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.DocumentReferenceAccessor;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.naming.OperationNotSupportedException;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 @ApplicationScoped
-public class DocumentReferenceProxy extends LadonResourceProxy implements IResourceProvider {
+public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase implements IResourceProvider {
     private static final Logger LOG = LoggerFactory.getLogger(DocumentReferenceProxy.class);
 
-    public DocumentReferenceProxy(){
+    public DocumentReferenceProxy() {
         super();
         this.setInitialised(false);
     }
 
+    @Override
+    protected Logger getLogger() {
+        return (LOG);
+    }
+
     @Inject
-    private DocumentReferenceAccessor docRefAccessor;
+    private DocumentReferenceAccessor virtualDBAccessor;
 
     @Inject
     private OperationOutcomeGenerator outcomeGenerator;
 
-    @PostConstruct
-    private void initialisePatientProxy(){
-        if(!this.isInitialised()) {
-            LOG.info("DocumentReferenceProxy::initialisePatientProxy(): Entry, Initialising Services");
-            getLadonPlant().initialisePlant();
-            getDocumentReferenceAccessor().initialiseServices();
-            this.setInitialised(true);
-            LOG.debug("DocumentReferenceProxy::initialisePatientProxy(): Exit");
-        }
-    }
-
-    public void initialiseServices(){
-        initialisePatientProxy();
-    }
-
-    public DocumentReferenceAccessor getDocumentReferenceAccessor() {
-        return docRefAccessor;
+    @Override
+    protected AccessorBase specifyVirtualDBAccessor() {
+        return (virtualDBAccessor);
     }
 
     @Override
@@ -88,22 +82,8 @@ public class DocumentReferenceProxy extends LadonResourceProxy implements IResou
     public MethodOutcome createDocumentReference(@ResourceParam DocumentReference theResource) {
         LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", theResource);
         //validateResource(thePatient);
-        IdType resourceId = docRefAccessor.addResource(theResource);
-        MethodOutcome outcome = new MethodOutcome();
-        if(resourceId != null){
-            outcome.setId(resourceId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceAddedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_INFORMATION));
-            LOG.debug(".createDocumentReference(): Exit, all good. Outcome (MethodOutcome) -->", outcome);
-        } else {
-            IdType deletedDocRefId = docRefAccessor.removeResource(theResource);
-            outcome.setId(deletedDocRefId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceDeletedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_ERROR));
-            LOG.debug(".createDocumentReference(): Exit, There was a problem adding the resource. Outcome (MethodOutcome) -->", outcome);
-        }
-
-
-
-        return new MethodOutcome(resourceId);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().createResource(theResource);
+        return (outcome);
     }
 
     /**
@@ -115,61 +95,70 @@ public class DocumentReferenceProxy extends LadonResourceProxy implements IResou
      * </p>
      *
      * @param resourceId The read operation takes one parameter, which must be of type IdDt and must be annotated
-     *                  with the "@Read.IdParam" annotation.
+     *                   with the "@Read.IdParam" annotation.
      * @return Returns a resource matching this identifier, or null if none exists.
      */
     @Read()
-    public DocumentReference readDocumentReference(@IdParam IdType resourceId){
+    public DocumentReference readDocumentReference(@IdParam IdType resourceId) {
         LOG.debug(".readDocumentReference(): Entry, resourceId (IdType) --> {}", resourceId);
-        DocumentReference retrievedDocRef = docRefAccessor.getResourceById(resourceId);
+        VirtualDBMethodOutcome outcome = getResource(resourceId);
+        DocumentReference retrievedDocRef = (DocumentReference) outcome.getResource();
         LOG.debug(".readDocumentReference(): Exit, retrieved Document Reference (DocumentReference) --> {}", retrievedDocRef);
-        return(retrievedDocRef);
+        return (retrievedDocRef);
     }
 
 
     @Delete()
-    public MethodOutcome deleteDocumentReference(@IdParam IdType resourceId){
+    public MethodOutcome deleteDocumentReference(@IdParam IdType resourceId) throws OperationNotSupportedException {
         LOG.debug(".deleteDocumentReference(): Entry, resourceId (IdType) --> {}", resourceId);
-        DocumentReference retrievedDocRef = docRefAccessor.getResourceById(resourceId);
-        MethodOutcome outcome = new MethodOutcome();
-        if(retrievedDocRef == null){
-            outcome.setId(resourceId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceNotFoundOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_ERROR));
-            LOG.debug(".deleteDocumentReference(): Exit, Operation failed, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        } else {
-            IdType deletedPatientId = docRefAccessor.removeResource(retrievedDocRef);
-            outcome.setId(deletedPatientId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceDeletedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_INFORMATION));
-            LOG.debug(".deleteDocumentReference(): Exit, Operation succeeded, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        }
-        return(outcome);
+        throw (new OperationNotSupportedException("deletion of a DocumentReference is not supported"));
     }
 
     @Search()
-    public Bundle searchByDateAndType(@RequiredParam(name=DocumentReference.SP_DATE) DateRangeParam theRange, @RequiredParam(name= DocumentReference.SP_TYPE) TokenParam docRefType) {
+    public Bundle searchByDateAndType(@RequiredParam(name = DocumentReference.SP_DATE) DateRangeParam theRange, @RequiredParam(name = DocumentReference.SP_TYPE) TokenParam docRefType) {
         LOG.debug(".searchByDateAndType(): Entry, DateTimeRange --> {}, Type --> {}", theRange, docRefType);
 
+        HashMap<Property, Element> argumentList = new HashMap<>();
+
+        // First Parameter, the DocumentReference.type
         CodeableConcept docType = new CodeableConcept();
         Coding docCoding = new Coding();
         docCoding.setCode(docRefType.getValue());
         docCoding.setSystem((docRefType.getSystem()));
         docType.addCoding(docCoding);
         docType.setText(docRefType.getValue());
+        Property docRefTypeProperty = new Property(
+                "type",
+                "CodeableConcept",
+                "Specifies the particular kind of document referenced (e.g. History and Physical, Discharge Summary, Progress Note). This usually equates to the purpose of making the document referenced.",
+                0,
+                1,
+                (List<? extends Base>) null);
+        argumentList.put(docRefTypeProperty, docType);
+        // Second Parameter, the DocumentReference.date (expressed as a Period, where the date is to be in-between)
+        Period searchPeriod = new Period();
+        searchPeriod.setStart(theRange.getLowerBoundAsInstant());
+        searchPeriod.setEnd(theRange.getUpperBoundAsInstant());
+        Property docRefDateProperty = new Property(
+                "date",
+                "instant",
+                "When the document reference was created.",
+                0,
+                1,
+                (List<? extends Base>) null);
+        argumentList.put(docRefDateProperty, searchPeriod);
 
-        Date fromDate = theRange.getLowerBoundAsInstant();
-        Date toDate = theRange.getUpperBoundAsInstant();
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, argumentList);
 
-        List<DocumentReference> docrefList = docRefAccessor.searchFor(docType, fromDate, false, toDate, true);
-
-        Bundle outputBundle = new Bundle();
-        outputBundle.setType(Bundle.BundleType.SEARCHSET);
-        outputBundle.setTimestamp(Date.from(Instant.now()));
-        outputBundle.setTotal(docrefList.size());
-        for(DocumentReference currentDocRef: docrefList){
-            Bundle.BundleEntryComponent bundleEntry = new Bundle.BundleEntryComponent();
-            bundleEntry.setResource(currentDocRef);
-            outputBundle.addEntry(bundleEntry);
+        if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
+            Bundle searchOutcome = (Bundle) outcome.getResource();
+            return (searchOutcome);
+        } else {
+            Bundle outputBundle = new Bundle();
+            outputBundle.setType(Bundle.BundleType.SEARCHSET);
+            outputBundle.setTimestamp(Date.from(Instant.now()));
+            outputBundle.setTotal(0);
+            return (outputBundle);
         }
-        return(outputBundle);
     }
 }

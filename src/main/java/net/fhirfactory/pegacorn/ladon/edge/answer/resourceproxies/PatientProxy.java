@@ -24,12 +24,16 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.server.IResourceProvider;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.PatientAccessor;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonResourceProxy;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeGenerator;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeSeverityEnum;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeAsynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PatientAccessor;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeGetResourceBase;
+import net.fhirfactory.pegacorn.fhir.operations.OperationOutcomeGenerator;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +42,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 @ApplicationScoped
-public class PatientProxy extends LadonResourceProxy implements IResourceProvider {
+public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implements IResourceProvider {
     private static final Logger LOG = LoggerFactory.getLogger(PatientProxy.class);
 
     public PatientProxy(){
@@ -56,7 +60,7 @@ public class PatientProxy extends LadonResourceProxy implements IResourceProvide
     private void initialisePatientProxy(){
         if(!this.isInitialised()) {
             LOG.debug("PatientProxy::initialisePatientProxy(): Entry, Initialising Services");
-            getLadonPlant().initialisePlant();
+            getProcessingPlant().initialisePlant();
             getPatientAccessor().initialiseServices();
             this.setInitialised(true);
             LOG.debug("PatientProxy::initialisePatientProxy(): Exit");
@@ -81,25 +85,11 @@ public class PatientProxy extends LadonResourceProxy implements IResourceProvide
      * new instance of a resource to the server.
      */
     @Create()
-    public MethodOutcome createPatient(@ResourceParam Patient thePatient) {
+    public VirtualDBMethodOutcome createResource(@ResourceParam Patient thePatient) {
         LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
         //validateResource(thePatient);
-        IdType resourceId = patientAccessor.addResource(thePatient);
-        MethodOutcome outcome = new MethodOutcome();
-        if(resourceId != null){
-            outcome.setId(resourceId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceNotFoundOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_ERROR));
-            LOG.debug(".deletePatient(): Exit, Operation failed, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        } else {
-            IdType deletedPatientId = patientAccessor.removeResource(thePatient);
-            outcome.setId(deletedPatientId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceDeletedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_INFORMATION));
-            LOG.debug(".deletePatient(): Exit, Operation succeeded, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        }
-
-
-
-        return new MethodOutcome(resourceId);
+        VirtualDBMethodOutcome resourceActionOutcome = patientAccessor.createResource(thePatient);
+        return (resourceActionOutcome);
     }
 
     /**
@@ -115,29 +105,57 @@ public class PatientProxy extends LadonResourceProxy implements IResourceProvide
      * @return Returns a resource matching this identifier, or null if none exists.
      */
     @Read()
-    public Patient readPatient(@IdParam IdType patientID){
+    public Patient readResource(@IdParam IdType patientID){
         LOG.debug(".readPatient(): Entry, patientID (IdType) --> {}", patientID);
-        Patient retrievedPatient = patientAccessor.getResourceById(patientID);
+        Patient retrievedPatient = patientAccessor.getPatient(patientID);
         LOG.debug(".readPatient(): Exit, retrieved Patient (Patient) --> {}", retrievedPatient);
         return(retrievedPatient);
     }
 
+    /**
+     * This is the "read" operation. The "@Read" annotation indicates that this method supports the read and/or
+     * read operation.
+     * <p>
+     * Read operations take a single parameter annotated with the {@link IdParam} paramater, and should return a
+     * single resource instance.
+     * </p>
+     *
+     * @param identifier The read operation takes one parameter
+     * @return Returns a resource matching this identifier, or null if none exists.
+     */
+    @Read()
+    public Patient readResource(Identifier identifier){
+        LOG.debug(".readPatient(): Entry, patientID (IdType) --> {}", identifier);
+        Patient retrievedPatient = patientAccessor.getPatient(identifier);
+        LOG.debug(".readPatient(): Exit, retrieved Patient (Patient) --> {}", retrievedPatient);
+        return(retrievedPatient);
+    }
+
+    /**
+     * The "@Update" annotation indicates that this method implements "update=type", which adds a
+     * new instance of a resource to the server.
+     */
+    @Update()
+    public VirtualDBMethodOutcome updateResource(@ResourceParam Patient thePatient) {
+        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
+        VirtualDBMethodOutcome resourceActionOutcome = createResource(thePatient);
+        return (resourceActionOutcome);
+    }
+
 
     @Delete()
-    public MethodOutcome deletePatient(@IdParam IdType resourceId){
+    public VirtualDBMethodOutcome deleteResource(@IdParam IdType resourceId){
         LOG.debug(".deletePatient(): Entry, resourceId (IdType) --> {}", resourceId);
-        Patient retrievedPatient = patientAccessor.getResourceById(resourceId);
-        MethodOutcome outcome = new MethodOutcome();
-        if(retrievedPatient == null){
-            outcome.setId(resourceId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceNotFoundOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_ERROR));
-            LOG.debug(".deletePatient(): Exit, Operation failed, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        } else {
-            IdType deletedPatientId = patientAccessor.removeResource(retrievedPatient);
-            outcome.setId(deletedPatientId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceDeletedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_INFORMATION));
-            LOG.debug(".deletePatient(): Exit, Operation succeeded, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        }
-        return(outcome);
+        throw(new UnsupportedOperationException("deletePatient() is not supported"));
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return (LOG);
+    }
+
+    @Override
+    protected AccessorBase specifyVirtualDBAccessor() {
+        return (patientAccessor);
     }
 }
