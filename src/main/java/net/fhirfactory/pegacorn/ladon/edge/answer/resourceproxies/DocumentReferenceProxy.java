@@ -26,7 +26,7 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
-import net.fhirfactory.pegacorn.fhir.operations.OperationOutcomeGenerator;
+import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
@@ -81,14 +81,13 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
     @Create()
     public MethodOutcome createDocumentReference(@ResourceParam DocumentReference theResource) {
         LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", theResource);
-        //validateResource(thePatient);
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().createResource(theResource);
         return (outcome);
     }
 
     /**
      * This is the "read" operation. The "@Read" annotation indicates that this method supports the read and/or
-     * read operation.
+     * get operation.
      * <p>
      * Read operations take a single parameter annotated with the {@link IdParam} paramater, and should return a
      * single resource instance.
@@ -99,14 +98,21 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
      * @return Returns a resource matching this identifier, or null if none exists.
      */
     @Read()
-    public DocumentReference readDocumentReference(@IdParam IdType resourceId) {
-        LOG.debug(".readDocumentReference(): Entry, resourceId (IdType) --> {}", resourceId);
+    public DocumentReference reviewDocumentReference(@IdParam IdType resourceId) {
+        LOG.debug(".reviewDocumentReference(): Entry, resourceId (IdType) --> {}", resourceId);
         VirtualDBMethodOutcome outcome = getResource(resourceId);
         DocumentReference retrievedDocRef = (DocumentReference) outcome.getResource();
-        LOG.debug(".readDocumentReference(): Exit, retrieved Document Reference (DocumentReference) --> {}", retrievedDocRef);
+        LOG.debug(".reviewDocumentReference(): Exit, retrieved Document Reference (DocumentReference) --> {}", retrievedDocRef);
         return (retrievedDocRef);
     }
 
+    @Update()
+    public MethodOutcome updateDocumentReference(@ResourceParam DocumentReference docRefToUpdate) {
+        LOG.debug(".readDocumentReference(): Entry, docRefToUpdate (DocumentReference) --> {}", docRefToUpdate);
+        VirtualDBMethodOutcome outcome = updateResource(docRefToUpdate);
+        LOG.debug(".readDocumentReference(): Exit, outcome (VirtualDBMethodOutcome) --> {}", outcome);
+        return (outcome);
+    }
 
     @Delete()
     public MethodOutcome deleteDocumentReference(@IdParam IdType resourceId) throws OperationNotSupportedException {

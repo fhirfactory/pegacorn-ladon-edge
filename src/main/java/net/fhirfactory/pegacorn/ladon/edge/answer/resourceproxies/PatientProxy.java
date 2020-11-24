@@ -23,23 +23,27 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.DateRangeParam;
+import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
+import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeAsynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PatientAccessor;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeGetResourceBase;
-import net.fhirfactory.pegacorn.fhir.operations.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 @ApplicationScoped
 public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implements IResourceProvider {
@@ -56,97 +60,9 @@ public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implemen
     @Inject
     private OperationOutcomeGenerator outcomeGenerator;
 
-    @PostConstruct
-    private void initialisePatientProxy(){
-        if(!this.isInitialised()) {
-            LOG.debug("PatientProxy::initialisePatientProxy(): Entry, Initialising Services");
-            getProcessingPlant().initialisePlant();
-            getPatientAccessor().initialiseServices();
-            this.setInitialised(true);
-            LOG.debug("PatientProxy::initialisePatientProxy(): Exit");
-        }
-    }
-
-    public void initialiseServices(){
-        initialisePatientProxy();
-    }
-
-    public PatientAccessor getPatientAccessor() {
-        return patientAccessor;
-    }
-
     @Override
     public Class<Patient> getResourceType() {
         return (Patient.class);
-    }
-
-    /**
-     * The "@Create" annotation indicates that this method implements "create=type", which adds a
-     * new instance of a resource to the server.
-     */
-    @Create()
-    public VirtualDBMethodOutcome createResource(@ResourceParam Patient thePatient) {
-        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
-        //validateResource(thePatient);
-        VirtualDBMethodOutcome resourceActionOutcome = patientAccessor.createResource(thePatient);
-        return (resourceActionOutcome);
-    }
-
-    /**
-     * This is the "read" operation. The "@Read" annotation indicates that this method supports the read and/or
-     * read operation.
-     * <p>
-     * Read operations take a single parameter annotated with the {@link IdParam} paramater, and should return a
-     * single resource instance.
-     * </p>
-     *
-     * @param patientID The read operation takes one parameter, which must be of type IdDt and must be annotated
-     *                  with the "@Read.IdParam" annotation.
-     * @return Returns a resource matching this identifier, or null if none exists.
-     */
-    @Read()
-    public Patient readResource(@IdParam IdType patientID){
-        LOG.debug(".readPatient(): Entry, patientID (IdType) --> {}", patientID);
-        Patient retrievedPatient = patientAccessor.getPatient(patientID);
-        LOG.debug(".readPatient(): Exit, retrieved Patient (Patient) --> {}", retrievedPatient);
-        return(retrievedPatient);
-    }
-
-    /**
-     * This is the "read" operation. The "@Read" annotation indicates that this method supports the read and/or
-     * read operation.
-     * <p>
-     * Read operations take a single parameter annotated with the {@link IdParam} paramater, and should return a
-     * single resource instance.
-     * </p>
-     *
-     * @param identifier The read operation takes one parameter
-     * @return Returns a resource matching this identifier, or null if none exists.
-     */
-    @Read()
-    public Patient readResource(Identifier identifier){
-        LOG.debug(".readPatient(): Entry, patientID (IdType) --> {}", identifier);
-        Patient retrievedPatient = patientAccessor.getPatient(identifier);
-        LOG.debug(".readPatient(): Exit, retrieved Patient (Patient) --> {}", retrievedPatient);
-        return(retrievedPatient);
-    }
-
-    /**
-     * The "@Update" annotation indicates that this method implements "update=type", which adds a
-     * new instance of a resource to the server.
-     */
-    @Update()
-    public VirtualDBMethodOutcome updateResource(@ResourceParam Patient thePatient) {
-        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
-        VirtualDBMethodOutcome resourceActionOutcome = createResource(thePatient);
-        return (resourceActionOutcome);
-    }
-
-
-    @Delete()
-    public VirtualDBMethodOutcome deleteResource(@IdParam IdType resourceId){
-        LOG.debug(".deletePatient(): Entry, resourceId (IdType) --> {}", resourceId);
-        throw(new UnsupportedOperationException("deletePatient() is not supported"));
     }
 
     @Override
@@ -157,5 +73,89 @@ public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implemen
     @Override
     protected AccessorBase specifyVirtualDBAccessor() {
         return (patientAccessor);
+    }
+
+    /**
+     * The "@Create" annotation indicates that this method implements "create=type", which adds a
+     * new instance of a resource to the server.
+     */
+    @Create()
+    public MethodOutcome createPatient(@ResourceParam Patient thePatient) {
+        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
+        //validateResource(thePatient);
+        VirtualDBMethodOutcome resourceActionOutcome = getVirtualDBAccessor().createResource(thePatient);
+        return (resourceActionOutcome);
+    }
+
+    /**
+     * This is the "read" operation. The "@Read" annotation indicates that this method supports the read and/or
+     * get operation.
+     * <p>
+     * Read operations take a single parameter annotated with the {@link IdParam} paramater, and should return a
+     * single resource instance.
+     * </p>
+     *
+     * @param patientID The read operation takes one parameter, which must be of type IdDt and must be annotated
+     *                  with the "@Read.IdParam" annotation.
+     * @return Returns a resource matching this identifier, or null if none exists.
+     */
+    @Read()
+    public Patient readPatient(@IdParam IdType patientID){
+        LOG.debug(".readPatient(): Entry, patientID (IdType) --> {}", patientID);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(patientID);
+        Patient retrievedPatient = (Patient)outcome.getResource();
+        LOG.debug(".readPatient(): Exit, retrieved Patient (Patient) --> {}", retrievedPatient);
+        return(retrievedPatient);
+    }
+
+    /**
+     * The "@Update" annotation indicates that this method implements "update=type", which adds a
+     * new instance of a resource to the server.
+     */
+    @Update()
+    public MethodOutcome updatePatient(@ResourceParam Patient thePatient) {
+        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
+        VirtualDBMethodOutcome resourceActionOutcome = getVirtualDBAccessor().updateResource(thePatient);
+        return (resourceActionOutcome);
+    }
+
+    @Delete()
+    public MethodOutcome deletePatient(@IdParam IdType resourceId){
+        LOG.debug(".deletePatient(): Entry, resourceId (IdType) --> {}", resourceId);
+        throw(new UnsupportedOperationException("deletePatient() is not supported"));
+    }
+
+    @Search()
+    public Bundle searchByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam patientReference) {
+        LOG.debug(".searchByIdentifier(): Entry, identifier (Identifier) --> {}", patientReference);
+
+        HashMap<Property, Element> argumentList = new HashMap<>();
+
+        // First Parameter, the Patient.identifier
+        Property identifierProperty = new Property(
+                "identifier",
+                "Identifier",
+                "An identifier for this patient.",
+                0,
+                100,
+                (List<? extends Base>) null);
+
+        Identifier identifier = new Identifier();
+        identifier.setValue(patientReference.getValue());
+        identifier.setSystem(patientReference.getSystem());
+        argumentList.put(identifierProperty, identifier);
+
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.Patient, argumentList);
+
+        if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
+            Bundle searchOutcome = (Bundle) outcome.getResource();
+            return (searchOutcome);
+        } else {
+            Bundle outputBundle = new Bundle();
+            outputBundle.setType(Bundle.BundleType.SEARCHSET);
+            outputBundle.setTimestamp(Date.from(Instant.now()));
+            outputBundle.setTotal(0);
+            return (outputBundle);
+        }
     }
 }
