@@ -21,10 +21,12 @@
  */
 package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
+import ca.uhn.fhir.model.api.IQueryParameterType;
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
+import ca.uhn.fhir.rest.param.TokenParamModifier;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -124,15 +127,9 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
     public Bundle searchByDateAndType(@RequiredParam(name = DocumentReference.SP_DATE) DateRangeParam theRange, @RequiredParam(name = DocumentReference.SP_TYPE) TokenParam docRefType) {
         LOG.debug(".searchByDateAndType(): Entry, DateTimeRange --> {}, Type --> {}", theRange, docRefType);
 
-        HashMap<Property, Element> argumentList = new HashMap<>();
+        HashMap<Property, Serializable> argumentList = new HashMap<>(); // TODO Need to replace "Object" with something more meaningful and appropriate
 
         // First Parameter, the DocumentReference.type
-        CodeableConcept docType = new CodeableConcept();
-        Coding docCoding = new Coding();
-        docCoding.setCode(docRefType.getValue());
-        docCoding.setSystem((docRefType.getSystem()));
-        docType.addCoding(docCoding);
-        docType.setText(docRefType.getValue());
         Property docRefTypeProperty = new Property(
                 "type",
                 "CodeableConcept",
@@ -140,11 +137,9 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
                 0,
                 1,
                 (List<? extends Base>) null);
-        argumentList.put(docRefTypeProperty, docType);
+        argumentList.put(docRefTypeProperty, docRefType);
         // Second Parameter, the DocumentReference.date (expressed as a Period, where the date is to be in-between)
         Period searchPeriod = new Period();
-        searchPeriod.setStart(theRange.getLowerBoundAsInstant());
-        searchPeriod.setEnd(theRange.getUpperBoundAsInstant());
         Property docRefDateProperty = new Property(
                 "date",
                 "instant",
@@ -152,7 +147,7 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
                 0,
                 1,
                 (List<? extends Base>) null);
-        argumentList.put(docRefDateProperty, searchPeriod);
+        argumentList.put(docRefDateProperty, theRange);
 
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, argumentList);
 
@@ -167,4 +162,35 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
             return (outputBundle);
         }
     }
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
+        LOG.debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+
+        HashMap<Property, Serializable> argumentList = new HashMap<>(); // TODO Need to replace "Object" with something more meaningful and appropriate
+
+        // First Parameter, the DocumentReference.type
+        Property docRefTypeProperty = new Property(
+                "identifier",
+                "Identifier",
+                "An identifier - identifies some entity uniquely and unambiguously. Typically this is used for business identifiers.",
+                0,
+                100,
+                (List<? extends Base>) null);
+        argumentList.put(docRefTypeProperty, identifierParam);
+
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, argumentList);
+
+        if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
+            Bundle searchOutcome = (Bundle) outcome.getResource();
+            return (searchOutcome);
+        } else {
+            Bundle outputBundle = new Bundle();
+            outputBundle.setType(Bundle.BundleType.SEARCHSET);
+            outputBundle.setTimestamp(Date.from(Instant.now()));
+            outputBundle.setTotal(0);
+            return (outputBundle);
+        }
+    }
+
 }

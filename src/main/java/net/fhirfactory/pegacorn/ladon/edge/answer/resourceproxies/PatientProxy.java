@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -129,7 +130,7 @@ public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implemen
     public Bundle searchByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam patientReference) {
         LOG.debug(".searchByIdentifier(): Entry, identifier (Identifier) --> {}", patientReference);
 
-        HashMap<Property, Element> argumentList = new HashMap<>();
+        HashMap<Property, Serializable> argumentList = new HashMap<>();
 
         // First Parameter, the Patient.identifier
         Property identifierProperty = new Property(
@@ -140,10 +141,7 @@ public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implemen
                 100,
                 (List<? extends Base>) null);
 
-        Identifier identifier = new Identifier();
-        identifier.setValue(patientReference.getValue());
-        identifier.setSystem(patientReference.getSystem());
-        argumentList.put(identifierProperty, identifier);
+        argumentList.put(identifierProperty, patientReference);
 
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.Patient, argumentList);
 
