@@ -26,6 +26,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import net.fhirfactory.pegacorn.deployment.properties.SystemWideProperties;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.*;
 import org.slf4j.Logger;
 
@@ -43,6 +44,9 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
     abstract protected Logger getLogger();
 
     private static final long serialVersionUID = 1L;
+
+    @Inject
+    SystemWideProperties systemWideProperties;
 
     @Inject
     protected CareTeamProxy careTeamProxy;
@@ -116,6 +120,7 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
         providers.add(communicationProxy);
         providers.add(communicationRequestProxy);
         providers.add(documentReferenceProxy);
+        providers.add(encounterProxy);
         providers.add(endpointProxy);
         providers.add(groupProxy);
         providers.add(healthcareServiceProxy);
@@ -137,8 +142,8 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
         INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
         getFhirContext().setNarrativeGenerator(narrativeGen);
 
-        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
-        registerInterceptor(apiKeyValidatorInterceptor);
+//        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
+//        registerInterceptor(apiKeyValidatorInterceptor);
         
         /*
          * Use nice coloured HTML when a browser is used to request the content
