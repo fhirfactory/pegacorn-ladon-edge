@@ -167,19 +167,11 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
     public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
         LOG.debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
 
-        HashMap<Property, Serializable> argumentList = new HashMap<>(); // TODO Need to replace "Object" with something more meaningful and appropriate
+        Identifier identifierToSearchFor = new Identifier();
+        identifierToSearchFor.setSystem(identifierParam.getSystem());
+        identifierToSearchFor.setValue(identifierParam.getValue());
 
-        // First Parameter, the DocumentReference.type
-        Property docRefTypeProperty = new Property(
-                "identifier",
-                "Identifier",
-                "An identifier - identifies some entity uniquely and unambiguously. Typically this is used for business identifiers.",
-                0,
-                100,
-                (List<? extends Base>) null);
-        argumentList.put(docRefTypeProperty, identifierParam);
-
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, argumentList);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
 
         if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
             Bundle searchOutcome = (Bundle) outcome.getResource();
