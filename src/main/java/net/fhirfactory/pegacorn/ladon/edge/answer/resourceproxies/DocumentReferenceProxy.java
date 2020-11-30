@@ -184,5 +184,4 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
             return (outputBundle);
         }
     }
-
 }
