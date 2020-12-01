@@ -173,10 +173,12 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
 
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
 
-        if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
+        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH) || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED) ) {
+            getLogger().info("findByIdentifier(): search is finished --> all good");
             Bundle searchOutcome = (Bundle) outcome.getResource();
             return (searchOutcome);
         } else {
+            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
             Bundle outputBundle = new Bundle();
             outputBundle.setType(Bundle.BundleType.SEARCHSET);
             outputBundle.setTimestamp(Date.from(Instant.now()));
