@@ -24,23 +24,17 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.servlet;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.servlet.annotation.WebServlet;
 
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
+import net.fhirfactory.pegacorn.deployment.properties.SystemWideProperties;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.*;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.DocumentReferenceProxy;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.PatientProxy;
-import net.fhirfactory.pegacorn.platform.edge.ask.PegacornHapiFhirProxy;
-import net.fhirfactory.pegacorn.platform.edge.receive.common.ApiKeyValidatorInterceptor;
 import net.fhirfactory.pegacorn.util.FhirUtil;
 
 
@@ -50,10 +44,55 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
     private static final long serialVersionUID = 1L;
 
     @Inject
+    SystemWideProperties systemWideProperties;
+
+    @Inject
+    protected CareTeamProxy careTeamProxy;
+
+    @Inject
+    protected CommunicationProxy communicationProxy;
+
+    @Inject
+    protected CommunicationRequestProxy communicationRequestProxy;
+
+    @Inject
+    protected DocumentReferenceProxy documentReferenceProxy;
+
+    @Inject
+    protected EncounterProxy encounterProxy;
+
+    @Inject
+    protected EndpointProxy endpointProxy;
+
+    @Inject
+    protected GroupProxy groupProxy;
+
+    @Inject
+    protected HealthcareServiceProxy healthcareServiceProxy;
+
+    @Inject
+    protected LocationProxy locationProxy;
+
+    @Inject
+    protected OrganizationProxy organizationProxy;
+
+    @Inject
     protected PatientProxy patientProxy;
 
     @Inject
-    protected DocumentReferenceProxy docRefProxy;
+    protected PractitionerProxy practitionerProxy;
+
+    @Inject
+    protected PractitionerRoleProxy practitionerRoleProxy;
+
+    @Inject
+    protected ProcedureProxy procedureProxy;
+
+    @Inject
+    protected TaskProxy taskProxy;
+
+    @Inject
+    protected ValueSetProxy valueSetProxy;
 
     /**
      * Constructor
@@ -75,16 +114,22 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
          * type of resource.
          */
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
-//        providers.add(new CareTeamProxy());
-            providers.add(docRefProxy);
-//        providers.add(new GroupProxy());
-//        providers.add(new HealthCareServiceProxy());
-//        providers.add(new LocationProxy());
-// providers.add(new OrganizationProxy()); */
-//        providers.add(patientProxy);
-//        providers.add(new PractitionerProxy());
-//        providers.add(new PractitionerRoleProxy());
-//        providers.add(new ValueSetProxy()); */
+        providers.add(careTeamProxy);
+        providers.add(communicationProxy);
+        providers.add(communicationRequestProxy);
+        providers.add(documentReferenceProxy);
+        providers.add(encounterProxy);
+        providers.add(endpointProxy);
+        providers.add(groupProxy);
+        providers.add(healthcareServiceProxy);
+        providers.add(locationProxy);
+        providers.add(organizationProxy);
+        providers.add(patientProxy);
+        providers.add(practitionerProxy);
+        providers.add(practitionerRoleProxy);
+        providers.add(procedureProxy);
+        providers.add(taskProxy);
+        providers.add(valueSetProxy);
         setResourceProviders(providers);
 
         /*
@@ -95,8 +140,8 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
         INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
         getFhirContext().setNarrativeGenerator(narrativeGen);
 
-        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
-        registerInterceptor(apiKeyValidatorInterceptor);
+//        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
+//        registerInterceptor(apiKeyValidatorInterceptor);
         
         /*
          * Use nice coloured HTML when a browser is used to request the content

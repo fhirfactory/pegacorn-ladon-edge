@@ -21,30 +21,25 @@
  */
 package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common;
 
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.PatientAccessor;
-import net.fhirfactory.pegacorn.ladon.processingplant.LadonProcessingPlant;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
+import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Resource;
 
-import javax.inject.Inject;
+abstract public class LadonEdgeAsynchronousCRUDResourceBase extends LadonEdgeGetResourceBase{
 
-public abstract class LadonResourceProxy {
-    boolean isInitialised;
-
-    public LadonResourceProxy(){
-        isInitialised = false;
+    @Override
+    protected VirtualDBMethodOutcome createResource(Resource resource) {
+        return null;
     }
 
-    @Inject
-    private LadonProcessingPlant ladonPlant;
-
-    public boolean isInitialised() {
-        return isInitialised;
+    @Override
+    protected VirtualDBMethodOutcome updateResource(Resource resource) {
+        return null;
     }
 
-    public void setInitialised(boolean initialised) {
-        isInitialised = initialised;
-    }
-
-    public LadonProcessingPlant getLadonPlant() {
-        return ladonPlant;
+    @Override
+    protected VirtualDBMethodOutcome deleteResource(IdType id) {
+        return null;
     }
 }

@@ -10,7 +10,7 @@ import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantH
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverResponseGenerationBean;
 import net.fhirfactory.pegacorn.petasos.ipc.beans.receiver.InterProcessingPlantHandoverUoWExtractionBean;
 import net.fhirfactory.pegacorn.petasos.wup.archetypes.EdgeIngresMessagingGatewayWUP;
-import net.fhirfactory.pegacorn.platform.edge.receive.common.DefaultFHIRBundleFromLadonReceiver;
+import net.fhirfactory.pegacorn.platform.edge.receive.DefaultFHIRBundleFromLadonReceiver;
 
 public abstract class LadonEdgeIPCReceiverWUPTemplate extends EdgeIngresMessagingGatewayWUP {
 

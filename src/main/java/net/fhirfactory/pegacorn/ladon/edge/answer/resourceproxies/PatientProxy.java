@@ -23,22 +23,31 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.DateRangeParam;
+import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.PatientAccessor;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonResourceProxy;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeGenerator;
-import net.fhirfactory.pegacorn.ladon.dtcache.accessors.common.OperationOutcomeSeverityEnum;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Patient;
+import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeAsynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PatientAccessor;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 @ApplicationScoped
-public class PatientProxy extends LadonResourceProxy implements IResourceProvider {
+public class PatientProxy extends LadonEdgeAsynchronousCRUDResourceBase implements IResourceProvider {
     private static final Logger LOG = LoggerFactory.getLogger(PatientProxy.class);
 
     public PatientProxy(){
@@ -52,28 +61,19 @@ public class PatientProxy extends LadonResourceProxy implements IResourceProvide
     @Inject
     private OperationOutcomeGenerator outcomeGenerator;
 
-    @PostConstruct
-    private void initialisePatientProxy(){
-        if(!this.isInitialised()) {
-            LOG.debug("PatientProxy::initialisePatientProxy(): Entry, Initialising Services");
-            getLadonPlant().initialisePlant();
-            getPatientAccessor().initialiseServices();
-            this.setInitialised(true);
-            LOG.debug("PatientProxy::initialisePatientProxy(): Exit");
-        }
-    }
-
-    public void initialiseServices(){
-        initialisePatientProxy();
-    }
-
-    public PatientAccessor getPatientAccessor() {
-        return patientAccessor;
-    }
-
     @Override
     public Class<Patient> getResourceType() {
         return (Patient.class);
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return (LOG);
+    }
+
+    @Override
+    protected AccessorBase specifyVirtualDBAccessor() {
+        return (patientAccessor);
     }
 
     /**
@@ -84,27 +84,13 @@ public class PatientProxy extends LadonResourceProxy implements IResourceProvide
     public MethodOutcome createPatient(@ResourceParam Patient thePatient) {
         LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
         //validateResource(thePatient);
-        IdType resourceId = patientAccessor.addResource(thePatient);
-        MethodOutcome outcome = new MethodOutcome();
-        if(resourceId != null){
-            outcome.setId(resourceId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceNotFoundOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_ERROR));
-            LOG.debug(".deletePatient(): Exit, Operation failed, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        } else {
-            IdType deletedPatientId = patientAccessor.removeResource(thePatient);
-            outcome.setId(deletedPatientId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceDeletedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_INFORMATION));
-            LOG.debug(".deletePatient(): Exit, Operation succeeded, resource did not exist. Outcome (MethodOutcome) -->", outcome);
-        }
-
-
-
-        return new MethodOutcome(resourceId);
+        VirtualDBMethodOutcome resourceActionOutcome = getVirtualDBAccessor().createResource(thePatient);
+        return (resourceActionOutcome);
     }
 
     /**
      * This is the "read" operation. The "@Read" annotation indicates that this method supports the read and/or
-     * read operation.
+     * get operation.
      * <p>
      * Read operations take a single parameter annotated with the {@link IdParam} paramater, and should return a
      * single resource instance.
@@ -117,27 +103,57 @@ public class PatientProxy extends LadonResourceProxy implements IResourceProvide
     @Read()
     public Patient readPatient(@IdParam IdType patientID){
         LOG.debug(".readPatient(): Entry, patientID (IdType) --> {}", patientID);
-        Patient retrievedPatient = patientAccessor.getResourceById(patientID);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(patientID);
+        Patient retrievedPatient = (Patient)outcome.getResource();
         LOG.debug(".readPatient(): Exit, retrieved Patient (Patient) --> {}", retrievedPatient);
         return(retrievedPatient);
     }
 
+    /**
+     * The "@Update" annotation indicates that this method implements "update=type", which adds a
+     * new instance of a resource to the server.
+     */
+    @Update()
+    public MethodOutcome updatePatient(@ResourceParam Patient thePatient) {
+        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", thePatient);
+        VirtualDBMethodOutcome resourceActionOutcome = getVirtualDBAccessor().updateResource(thePatient);
+        return (resourceActionOutcome);
+    }
 
     @Delete()
     public MethodOutcome deletePatient(@IdParam IdType resourceId){
         LOG.debug(".deletePatient(): Entry, resourceId (IdType) --> {}", resourceId);
-        Patient retrievedPatient = patientAccessor.getResourceById(resourceId);
-        MethodOutcome outcome = new MethodOutcome();
-        if(retrievedPatient == null){
-            outcome.setId(resourceId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceNotFoundOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_ERROR));
-            LOG.debug(".deletePatient(): Exit, Operation failed, resource did not exist. Outcome (MethodOutcome) -->", outcome);
+        throw(new UnsupportedOperationException("deletePatient() is not supported"));
+    }
+
+    @Search()
+    public Bundle searchByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam patientReference) {
+        LOG.debug(".searchByIdentifier(): Entry, identifier (Identifier) --> {}", patientReference);
+
+        HashMap<Property, Serializable> argumentList = new HashMap<>();
+
+        // First Parameter, the Patient.identifier
+        Property identifierProperty = new Property(
+                "identifier",
+                "Identifier",
+                "An identifier for this patient.",
+                0,
+                100,
+                (List<? extends Base>) null);
+
+        argumentList.put(identifierProperty, patientReference);
+
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.Patient, argumentList);
+
+        if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
+            Bundle searchOutcome = (Bundle) outcome.getResource();
+            return (searchOutcome);
         } else {
-            IdType deletedPatientId = patientAccessor.removeResource(retrievedPatient);
-            outcome.setId(deletedPatientId);
-            outcome.setOperationOutcome(outcomeGenerator.generateResourceDeletedOutcome(resourceId, OperationOutcomeSeverityEnum.SEVERITY_INFORMATION));
-            LOG.debug(".deletePatient(): Exit, Operation succeeded, resource did not exist. Outcome (MethodOutcome) -->", outcome);
+            Bundle outputBundle = new Bundle();
+            outputBundle.setType(Bundle.BundleType.SEARCHSET);
+            outputBundle.setTimestamp(Date.from(Instant.now()));
+            outputBundle.setTotal(0);
+            return (outputBundle);
         }
-        return(outcome);
     }
 }
