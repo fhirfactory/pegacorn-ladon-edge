@@ -30,21 +30,17 @@ import net.fhirfactory.pegacorn.deployment.properties.SystemWideProperties;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.*;
 import org.slf4j.Logger;
 
+import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
-import net.fhirfactory.pegacorn.util.FhirUtil;
-
 
 public abstract class EdgeAnswerServlet extends RestfulServer {
     abstract protected Logger getLogger();
 
     private static final long serialVersionUID = 1L;
-    
-    @Inject
-    protected FhirUtil fhirUtil;
 
     @Inject
     SystemWideProperties systemWideProperties;
@@ -116,7 +112,8 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
          * Two resource providers are defined. Each one handles a specific
          * type of resource.
          */
-        setFhirContext(fhirUtil.getFhirContext());
+        FhirContext myFHIRContext = FhirContext.forR4();
+        setFhirContext(myFHIRContext);
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
         providers.add(careTeamProxy);
         providers.add(communicationProxy);
@@ -141,8 +138,8 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
          * but can be useful as it causes HAPI to generate narratives for
          * resources which don't otherwise have one.
          */
-        INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
-        getFhirContext().setNarrativeGenerator(narrativeGen);
+//        INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
+//        myFHIRContext.setNarrativeGenerator(narrativeGen);
 
 //        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
 //        registerInterceptor(apiKeyValidatorInterceptor);

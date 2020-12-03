@@ -23,14 +23,18 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PractitionerAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,5 +126,28 @@ public class PractitionerProxy extends LadonEdgeSynchronousCRUDResourceBase impl
     public MethodOutcome deletePractitioner(@IdParam IdType resourceId) throws OperationNotSupportedException {
         LOG.debug(".deletePractitioner(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new OperationNotSupportedException("deletion of a Practitioner is not supported"));
+    }
+    
+    @Search()
+    public Practitioner findByIdentifier(@RequiredParam(name = Practitioner.SP_IDENTIFIER) TokenParam identifierParam) {
+        LOG.debug(".searchByIdentifier(): Entry, identifierParam (TokenParam) --> {}", identifierParam);
+
+        Identifier identifierToSearchFor = new Identifier();
+        identifierToSearchFor.setSystem(identifierParam.getSystem());
+        identifierToSearchFor.setValue(identifierParam.getValue());
+
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
+
+        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH)
+                || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED)) {
+            getLogger().trace(".searchByIdentifier(): Got Result, outcome.id -->", identifierParam);
+            Practitioner searchOutcome = (Practitioner) outcome.getResource();
+            getLogger().trace(".searchByIdentifier(): Converted Result to Practitioner resource");
+            return (searchOutcome);
+        } else {
+            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
+            Practitioner practitioner = new Practitioner();
+            return(practitioner);
+        }
     }
 }

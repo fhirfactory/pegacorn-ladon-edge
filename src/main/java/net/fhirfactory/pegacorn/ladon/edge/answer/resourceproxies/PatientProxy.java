@@ -133,9 +133,10 @@ public class PatientProxy extends LadonEdgeSynchronousCRUDResourceBase implement
         throw (new UnsupportedOperationException("deletePatient() is not supported"));
     }
 
+    
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
-        LOG.debug(".searchByIdentifier(): Entry, identifierParam (TokenParam) --> {}", identifierParam);
+    public Bundle findByIdentifierSet(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
+        LOG.debug(".searchByIdentifierSet(): Entry, identifierParam (TokenParam) --> {}", identifierParam);
 
         Identifier identifierToSearchFor = new Identifier();
         identifierToSearchFor.setSystem(identifierParam.getSystem());
@@ -155,6 +156,29 @@ public class PatientProxy extends LadonEdgeSynchronousCRUDResourceBase implement
             outputBundle.setTimestamp(Date.from(Instant.now()));
             outputBundle.setTotal(0);
             return (outputBundle);
+        }
+    }
+    
+    @Search()
+    public Patient findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
+        LOG.debug(".searchByIdentifier(): Entry, identifierParam (TokenParam) --> {}", identifierParam);
+
+        Identifier identifierToSearchFor = new Identifier();
+        identifierToSearchFor.setSystem(identifierParam.getSystem());
+        identifierToSearchFor.setValue(identifierParam.getValue());
+
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
+
+        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH)
+                || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED)) {
+            getLogger().trace(".searchByIdentifier(): Got Result, outcome.id -->", identifierParam);
+            Patient searchOutcome = (Patient) outcome.getResource();
+            getLogger().trace(".searchByIdentifier(): Converted Result to Patient resource");
+            return (searchOutcome);
+        } else {
+            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
+            Patient patient = new Patient();
+            return(patient);
         }
     }
 }
