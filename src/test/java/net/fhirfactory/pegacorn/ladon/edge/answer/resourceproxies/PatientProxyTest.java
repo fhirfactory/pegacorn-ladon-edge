@@ -41,8 +41,11 @@ public class PatientProxyTest {
     @Inject
     private PatientSetFactory patientSet;
 
-    private FhirContext contextR4;
+    @Inject
+    private FhirUtil fhirUtil;
+    
     private IParser parserR4;
+    
     private IGenericClient ladonEdgeClient;
 
     @Deployment(testable=true)
@@ -83,8 +86,8 @@ public class PatientProxyTest {
     @Before
     public void setUp() {
         LOG.debug(".setup(): Entry");
-        contextR4 = FhirUtil.getInstance().getFhirContext();
-        parserR4 = FhirUtil.getInstance().getJsonParser();
+        FhirContext contextR4 = fhirUtil.getFhirContext();
+        parserR4 = fhirUtil.getJsonParser();
         contextR4.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
         ladonEdgeClient = contextR4.newRestfulGenericClient("http://localhost:8080/pegacorn/fhir/r4/");
         LOG.trace(".setUp(): Exit!");

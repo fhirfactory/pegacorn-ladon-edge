@@ -42,6 +42,9 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
     abstract protected Logger getLogger();
 
     private static final long serialVersionUID = 1L;
+    
+    @Inject
+    protected FhirUtil fhirUtil;
 
     @Inject
     SystemWideProperties systemWideProperties;
@@ -99,7 +102,7 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
      */
 
     public EdgeAnswerServlet() {
-        super(FhirUtil.getInstance().getFhirContext()); // This is an R4 server
+
     }
 
     /**
@@ -113,6 +116,7 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
          * Two resource providers are defined. Each one handles a specific
          * type of resource.
          */
+        setFhirContext(fhirUtil.getFhirContext());
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
         providers.add(careTeamProxy);
         providers.add(communicationProxy);
