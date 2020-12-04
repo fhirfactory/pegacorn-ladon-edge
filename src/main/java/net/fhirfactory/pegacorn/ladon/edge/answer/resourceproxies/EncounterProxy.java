@@ -137,7 +137,7 @@ public class EncounterProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
     public Bundle findByIdentifier(@RequiredParam(name = Encounter.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

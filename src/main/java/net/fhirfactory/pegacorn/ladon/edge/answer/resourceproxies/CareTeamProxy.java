@@ -23,12 +23,10 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
-import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.CareTeamAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
@@ -39,10 +37,6 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
-import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 
 @ApplicationScoped
 public class CareTeamProxy extends LadonEdgeSynchronousCRUDResourceBase implements IResourceProvider {
@@ -140,7 +134,7 @@ public class CareTeamProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     public Bundle findByIdentifier(@RequiredParam(name = CareTeam.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

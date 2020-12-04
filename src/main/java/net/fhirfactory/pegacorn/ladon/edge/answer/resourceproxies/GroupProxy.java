@@ -137,7 +137,7 @@ public class GroupProxy extends LadonEdgeSynchronousCRUDResourceBase implements 
     public Bundle findByIdentifier(@RequiredParam(name = Group.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

@@ -137,7 +137,7 @@ public class CommunicationRequestProxy extends LadonEdgeSynchronousCRUDResourceB
     public Bundle findByIdentifier(@RequiredParam(name = CommunicationRequest.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

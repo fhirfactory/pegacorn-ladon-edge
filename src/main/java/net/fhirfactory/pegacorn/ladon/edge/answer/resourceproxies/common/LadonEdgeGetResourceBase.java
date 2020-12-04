@@ -37,10 +37,10 @@ public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
      * @param identifier the (partially populated) Identifier to search for
      * @return A FHIR::Bundle containing one or more resources matching the Identifier or an empty FHIR::Bundle.
      */
-    protected Bundle findByIdentifier(Identifier identifier) {
+    protected Bundle findResourceViaIdentifier(Identifier identifier) {
         getLogger().debug(".findByIdentifier(): Entry, identifier --> {}", identifier);
 
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().findResourceByIdentifier(identifier);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().findResourceViaIdentifier(identifier);
 
         if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH) || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED)) {
             getLogger().trace("findByIdentifier(): search is finished, extracting result bundle");
