@@ -133,10 +133,10 @@ public class PractitionerRoleProxy extends LadonEdgeSynchronousCRUDResourceBase 
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = PractitionerRole.SP_IDENTIFIER) TokenParam identifierParam) {
+    public PractitionerRole findByIdentifier(@RequiredParam(name = PractitionerRole.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        PractitionerRole outcome = (PractitionerRole) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 

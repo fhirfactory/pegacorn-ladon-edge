@@ -134,10 +134,10 @@ public class EndpointProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Endpoint.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Endpoint findByIdentifier(@RequiredParam(name = Endpoint.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        Endpoint outcome = (Endpoint) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

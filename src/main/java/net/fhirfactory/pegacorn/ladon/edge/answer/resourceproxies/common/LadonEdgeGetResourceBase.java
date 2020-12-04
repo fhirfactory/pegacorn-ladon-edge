@@ -37,18 +37,18 @@ public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
      * @param identifier the (partially populated) Identifier to search for
      * @return A FHIR::Bundle containing one or more resources matching the Identifier or an empty FHIR::Bundle.
      */
-    protected Bundle findResourceViaIdentifier(Identifier identifier) {
+    protected Resource findResourceViaIdentifier(Identifier identifier) {
         getLogger().debug(".findByIdentifier(): Entry, identifier --> {}", identifier);
 
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().findResourceViaIdentifier(identifier);
 
         if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH) || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED)) {
-            getLogger().trace("findByIdentifier(): search is finished, extracting result bundle");
-            Bundle searchOutcome = (Bundle) outcome.getResource();
-            getLogger().debug("findByIdentifier(): Exit, resulting Bundle contains {} Resources", searchOutcome.getTotal());
+            getLogger().trace("findByIdentifier(): search is finished, extracting result Resource");
+            Resource searchOutcome = (Resource) outcome.getResource();
+            getLogger().debug("findByIdentifier(): Exit, resulting Resource is {}", searchOutcome);
             return (searchOutcome);
         } else {
-            Bundle emptyOutcomeBundle = searchProcessHasFailed(".findByIdentifier()");
+            Resource emptyOutcomeBundle = searchProcessHasFailed(".findByIdentifier()");
             getLogger().debug("findByIdentifier(): Exit, search failed (not just not finding any matching resources, but the search process itself faield)!");
             return (emptyOutcomeBundle);
         }
@@ -80,12 +80,30 @@ public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
         String identifierTypeSystemValue = identifierParam.getSystem();
         String identifierTypeCodeValue = null;
         String identifierValue = null;
-        if(identifierParam.getModifier().getValue().equals(TokenParamModifier.OF_TYPE.getValue())){
+        boolean hasAppropriateModifier = false;
+        if(identifierParam.getModifier() == null) {
+            getLogger().error(".tokenParam2Identifier(): There is no modifier present");
+            hasAppropriateModifier = false;
+        } else {
+            if(identifierParam.getModifier().getValue().equals(TokenParamModifier.OF_TYPE.getValue())){
+                hasAppropriateModifier = true;
+            }
+        }
+        // HAPI FHIR Server is not passing Modifiers
+        // This code manually checks to see if a modifier 
+        // has been used. 
+        if(!hasAppropriateModifier) {
+            if(identifierParam.getValue().contains("|")) {
+                hasAppropriateModifier = true;
+            }
+        }
+        if(hasAppropriateModifier){
             String paramValue = identifierParam.getValue();
-            String values[] = paramValue.split("|");
+            String[] values = paramValue.split("\\|");
             identifierTypeCodeValue = values[0];
             identifierValue = values[1];
-        } else {
+        } 
+        else {
             identifierValue = identifierParam.getValue();
             identifierTypeCodeValue = "";
         }

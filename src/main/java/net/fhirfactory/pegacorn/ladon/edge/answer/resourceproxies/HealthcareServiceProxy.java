@@ -134,10 +134,10 @@ public class HealthcareServiceProxy extends LadonEdgeSynchronousCRUDResourceBase
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = HealthcareService.SP_IDENTIFIER) TokenParam identifierParam) {
+    public HealthcareService findByIdentifier(@RequiredParam(name = HealthcareService.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        HealthcareService outcome = (HealthcareService) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

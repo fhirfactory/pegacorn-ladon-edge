@@ -134,10 +134,10 @@ public class EncounterProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Encounter.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Encounter findByIdentifier(@RequiredParam(name = Encounter.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        Encounter outcome = (Encounter) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

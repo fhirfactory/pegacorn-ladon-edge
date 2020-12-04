@@ -134,10 +134,10 @@ public class OrganizationProxy extends LadonEdgeSynchronousCRUDResourceBase impl
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Organization.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Organization findByIdentifier(@RequiredParam(name = Organization.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        Organization outcome = (Organization) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

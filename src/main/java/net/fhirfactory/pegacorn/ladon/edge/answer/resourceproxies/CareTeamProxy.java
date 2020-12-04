@@ -131,10 +131,10 @@ public class CareTeamProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = CareTeam.SP_IDENTIFIER) TokenParam identifierParam) {
+    public CareTeam findByIdentifier(@RequiredParam(name = CareTeam.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        CareTeam outcome = (CareTeam) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

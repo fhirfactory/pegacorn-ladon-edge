@@ -128,10 +128,11 @@ public class PatientProxy extends LadonEdgeSynchronousCRUDResourceBase implement
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
-        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+    public Patient findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug("PatientProxy::findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        Patient outcome = (Patient)findResourceViaIdentifier(identifierToSearchFor);
+        getLogger().debug("PatientProxy::findByIdentifier(): Exit, resource --> {}", outcome);
         return(outcome);
     }
 }

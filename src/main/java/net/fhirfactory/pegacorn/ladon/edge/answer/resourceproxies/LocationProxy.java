@@ -134,10 +134,10 @@ public class LocationProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Location.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Location findByIdentifier(@RequiredParam(name = Location.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        Location outcome = (Location) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }

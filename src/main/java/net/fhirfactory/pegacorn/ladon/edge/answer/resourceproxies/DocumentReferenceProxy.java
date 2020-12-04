@@ -137,10 +137,10 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
+    public DocumentReference findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        DocumentReference outcome = (DocumentReference) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 

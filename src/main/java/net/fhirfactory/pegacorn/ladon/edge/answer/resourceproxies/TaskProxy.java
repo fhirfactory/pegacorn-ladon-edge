@@ -134,10 +134,10 @@ public class TaskProxy extends LadonEdgeSynchronousCRUDResourceBase implements I
     //
 
     @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = Task.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Task findByIdentifier(@RequiredParam(name = Task.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Bundle outcome = findResourceViaIdentifier(identifierToSearchFor);
+        Task outcome = (Task) findResourceViaIdentifier(identifierToSearchFor);
         return(outcome);
     }
 }
