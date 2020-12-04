@@ -138,8 +138,8 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
          * but can be useful as it causes HAPI to generate narratives for
          * resources which don't otherwise have one.
          */
-//        INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
-//        myFHIRContext.setNarrativeGenerator(narrativeGen);
+        INarrativeGenerator narrativeGen = new DefaultThymeleafNarrativeGenerator();
+        myFHIRContext.setNarrativeGenerator(narrativeGen);
 
 //        ApiKeyValidatorInterceptor apiKeyValidatorInterceptor = new ApiKeyValidatorInterceptor(PegacornHapiFhirProxy.API_KEY_HEADER_NAME, PegacornHapiFhirProxy.DEFAULT_API_KEY_PROPERTY_NAME);
 //        registerInterceptor(apiKeyValidatorInterceptor);

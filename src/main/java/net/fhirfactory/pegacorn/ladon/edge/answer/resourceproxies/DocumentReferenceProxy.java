@@ -31,14 +31,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
 
-import org.hl7.fhir.r4.model.Base;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.DocumentReference;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Period;
-import org.hl7.fhir.r4.model.Property;
-import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +130,20 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
         throw (new OperationNotSupportedException("deletion of a DocumentReference is not supported"));
     }
 
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        return(outcome);
+    }
+
     @Search()
     public Bundle searchByDateAndType(@RequiredParam(name = DocumentReference.SP_DATE) DateRangeParam theRange, @RequiredParam(name = DocumentReference.SP_TYPE) TokenParam docRefType) {
         LOG.debug(".searchByDateAndType(): Entry, DateTimeRange --> {}, Type --> {}", theRange, docRefType);
@@ -169,30 +176,6 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
             Bundle searchOutcome = (Bundle) outcome.getResource();
             return (searchOutcome);
         } else {
-            Bundle outputBundle = new Bundle();
-            outputBundle.setType(Bundle.BundleType.SEARCHSET);
-            outputBundle.setTimestamp(Date.from(Instant.now()));
-            outputBundle.setTotal(0);
-            return (outputBundle);
-        }
-    }
-
-    @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
-        LOG.debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
-
-        Identifier identifierToSearchFor = new Identifier();
-        identifierToSearchFor.setSystem(identifierParam.getSystem());
-        identifierToSearchFor.setValue(identifierParam.getValue());
-
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
-
-        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH) || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED) ) {
-            getLogger().info("findByIdentifier(): search is finished --> all good");
-            Bundle searchOutcome = (Bundle) outcome.getResource();
-            return (searchOutcome);
-        } else {
-            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
             Bundle outputBundle = new Bundle();
             outputBundle.setType(Bundle.BundleType.SEARCHSET);
             outputBundle.setTimestamp(Date.from(Instant.now()));

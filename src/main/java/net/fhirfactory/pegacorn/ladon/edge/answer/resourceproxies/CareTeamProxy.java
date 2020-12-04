@@ -129,4 +129,18 @@ public class CareTeamProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
         LOG.debug(".deleteCareTeam(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new OperationNotSupportedException("deletion of a CareTeam is not supported"));
     }
+
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = CareTeam.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        return(outcome);
+    }
 }

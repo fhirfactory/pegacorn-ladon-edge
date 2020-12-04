@@ -21,12 +21,15 @@
  */
 package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
-import java.time.Instant;
-import java.util.Date;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
+import ca.uhn.fhir.rest.annotation.*;
+import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.TokenParam;
+import ca.uhn.fhir.rest.server.IResourceProvider;
+import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
+import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PatientAccessor;
+import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
@@ -34,23 +37,8 @@ import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.uhn.fhir.rest.annotation.Create;
-import ca.uhn.fhir.rest.annotation.Delete;
-import ca.uhn.fhir.rest.annotation.IdParam;
-import ca.uhn.fhir.rest.annotation.Read;
-import ca.uhn.fhir.rest.annotation.RequiredParam;
-import ca.uhn.fhir.rest.annotation.ResourceParam;
-import ca.uhn.fhir.rest.annotation.Search;
-import ca.uhn.fhir.rest.annotation.Update;
-import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.param.TokenParam;
-import ca.uhn.fhir.rest.server.IResourceProvider;
-import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
-import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
-import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
-import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
-import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PatientAccessor;
-import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 @ApplicationScoped
 public class PatientProxy extends LadonEdgeSynchronousCRUDResourceBase implements IResourceProvider {
@@ -133,52 +121,17 @@ public class PatientProxy extends LadonEdgeSynchronousCRUDResourceBase implement
         throw (new UnsupportedOperationException("deletePatient() is not supported"));
     }
 
-    
+    //
+    //
+    // Support Searches
+    //
+    //
+
     @Search()
-    public Bundle findByIdentifierSet(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
-        LOG.debug(".searchByIdentifierSet(): Entry, identifierParam (TokenParam) --> {}", identifierParam);
-
-        Identifier identifierToSearchFor = new Identifier();
-        identifierToSearchFor.setSystem(identifierParam.getSystem());
-        identifierToSearchFor.setValue(identifierParam.getValue());
-
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
-
-        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH)
-                || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED)) {
-            getLogger().info("findByIdentifier(): search is finished --> all good");
-            Bundle searchOutcome = (Bundle) outcome.getResource();
-            return (searchOutcome);
-        } else {
-            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
-            Bundle outputBundle = new Bundle();
-            outputBundle.setType(Bundle.BundleType.SEARCHSET);
-            outputBundle.setTimestamp(Date.from(Instant.now()));
-            outputBundle.setTotal(0);
-            return (outputBundle);
-        }
-    }
-    
-    @Search()
-    public Patient findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
-        LOG.debug(".searchByIdentifier(): Entry, identifierParam (TokenParam) --> {}", identifierParam);
-
-        Identifier identifierToSearchFor = new Identifier();
-        identifierToSearchFor.setSystem(identifierParam.getSystem());
-        identifierToSearchFor.setValue(identifierParam.getValue());
-
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
-
-        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH)
-                || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED)) {
-            getLogger().trace(".searchByIdentifier(): Got Result, outcome.id -->", identifierParam);
-            Patient searchOutcome = (Patient) outcome.getResource();
-            getLogger().trace(".searchByIdentifier(): Converted Result to Patient resource");
-            return (searchOutcome);
-        } else {
-            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
-            Patient patient = new Patient();
-            return(patient);
-        }
+    public Bundle findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Bundle outcome = findByIdentifier(identifierToSearchFor);
+        return(outcome);
     }
 }
