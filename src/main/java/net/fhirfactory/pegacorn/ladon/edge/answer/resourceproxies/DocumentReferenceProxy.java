@@ -31,6 +31,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
 
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.searches.SearchNameEnum;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,7 +171,7 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
                 (List<? extends Base>) null);
         argumentList.put(docRefDateProperty, theRange);
 
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, argumentList);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, SearchNameEnum.DOCUMENT_REFERENCE_DATE_AND_TYPE, argumentList);
 
         if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
             Bundle searchOutcome = (Bundle) outcome.getResource();
