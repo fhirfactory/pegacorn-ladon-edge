@@ -30,10 +30,7 @@ import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEd
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.CommunicationRequestAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.CommunicationRequest;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,10 +131,16 @@ public class CommunicationRequestProxy extends LadonEdgeSynchronousCRUDResourceB
     //
 
     @Search()
-    public CommunicationRequest findByIdentifier(@RequiredParam(name = CommunicationRequest.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Bundle findByIdentifier(@RequiredParam(name = CommunicationRequest.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        CommunicationRequest outcome = (CommunicationRequest) findResourceViaIdentifier(identifierToSearchFor);
-        return(outcome);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 }

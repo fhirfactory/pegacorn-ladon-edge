@@ -1,5 +1,6 @@
 package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common;
 
+import net.fhirfactory.pegacorn.datasets.fhir.r4.base.entities.bundle.BundleContentHelper;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.processingplant.LadonProcessingPlant;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
@@ -24,6 +25,13 @@ public abstract class LadonEdgeProxyBase {
 
     @Inject
     private LadonProcessingPlant ladonPlant;
+
+    @Inject
+    private BundleContentHelper bundleContentHelper;
+
+    protected BundleContentHelper getBundleContentHelper(){
+        return(bundleContentHelper);
+    }
 
     @PostConstruct
     private void initialisePatientProxy(){

@@ -25,15 +25,13 @@ import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
+import net.fhirfactory.pegacorn.datasets.fhir.r4.base.entities.bundle.BundleContentHelper;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.PatientAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,11 +126,16 @@ public class PatientProxy extends LadonEdgeSynchronousCRUDResourceBase implement
     //
 
     @Search()
-    public Patient findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Bundle findByIdentifier(@RequiredParam(name = Patient.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug("PatientProxy::findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Patient outcome = (Patient)findResourceViaIdentifier(identifierToSearchFor);
-        getLogger().debug("PatientProxy::findByIdentifier(): Exit, resource --> {}", outcome);
-        return(outcome);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 }

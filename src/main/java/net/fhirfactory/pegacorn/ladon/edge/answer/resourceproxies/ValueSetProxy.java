@@ -130,11 +130,17 @@ public class ValueSetProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     //
 
     @Search()
-    public ValueSet findByIdentifier(@RequiredParam(name = ValueSet.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Bundle findByIdentifier(@RequiredParam(name = ValueSet.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        ValueSet outcome = (ValueSet) findResourceViaIdentifier(identifierToSearchFor);
-        return(outcome);
+        Resource outcome = (ValueSet) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 
 }

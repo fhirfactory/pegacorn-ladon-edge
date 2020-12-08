@@ -33,6 +33,7 @@ import java.time.Instant;
 public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
     private static String parameterSepeator = "|";
 
+
     /**
      * This is the default findByIdentifier() search function. It is called by the subclass (@Search annotated) public
      * Resource specific findByIdentifier() classes after those classes have resolved the Identifier.

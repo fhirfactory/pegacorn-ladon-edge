@@ -131,10 +131,16 @@ public class PractitionerProxy extends LadonEdgeSynchronousCRUDResourceBase impl
     //
 
     @Search()
-    public Practitioner findByIdentifier(@RequiredParam(name = Practitioner.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Bundle findByIdentifier(@RequiredParam(name = Practitioner.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Practitioner outcome = (Practitioner) findResourceViaIdentifier(identifierToSearchFor);
-        return(outcome);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 }

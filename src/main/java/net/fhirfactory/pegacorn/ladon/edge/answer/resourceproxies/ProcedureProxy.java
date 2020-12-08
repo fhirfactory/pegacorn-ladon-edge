@@ -139,11 +139,17 @@ public class ProcedureProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
     //
 
     @Search()
-    public Procedure findByIdentifier(@RequiredParam(name = Procedure.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Bundle findByIdentifier(@RequiredParam(name = Procedure.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        Procedure outcome = (Procedure) findResourceViaIdentifier(identifierToSearchFor);
-        return(outcome);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 
     @Search()
