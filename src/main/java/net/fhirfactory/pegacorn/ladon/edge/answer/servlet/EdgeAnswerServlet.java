@@ -28,6 +28,9 @@ import javax.inject.Inject;
 
 import net.fhirfactory.pegacorn.deployment.properties.SystemWideProperties;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.*;
+import net.fhirfactory.pegacorn.platform.edge.receive.common.ApiKeyValidatorInterceptor;
+import net.fhirfactory.pegacorn.util.FHIRContextUtility;
+
 import org.slf4j.Logger;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -93,10 +96,12 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
     @Inject
     protected ValueSetProxy valueSetProxy;
 
+    @Inject
+    protected FHIRContextUtility fHIRContextUtility;   
+    
     /**
      * Constructor
      */
-
     public EdgeAnswerServlet() {
 
     }
@@ -112,7 +117,7 @@ public abstract class EdgeAnswerServlet extends RestfulServer {
          * Two resource providers are defined. Each one handles a specific
          * type of resource.
          */
-        FhirContext myFHIRContext = FhirContext.forR4();
+        FhirContext myFHIRContext = fHIRContextUtility.getFhirContext();
         setFhirContext(myFHIRContext);
         List<IResourceProvider> providers = new ArrayList<IResourceProvider>();
         providers.add(careTeamProxy);
