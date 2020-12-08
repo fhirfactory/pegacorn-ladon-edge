@@ -164,7 +164,7 @@ public class ProcedureProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
         // Second Parameter, the DocumentReference.date (expressed as a Period, where the date is to be in-between)
         Period searchPeriod = new Period();
         Property docRefDateProperty = new Property(
-                "date",
+                "performed",
                 "dateTime",
                 "Estimated or actual date, date-time, period, or age when the procedure was performed. Allows a period to support complex procedures that span more than one date, and also allows for the length of the procedure to be captured.",
                 0,

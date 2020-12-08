@@ -31,6 +31,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
 
+import net.fhirfactory.pegacorn.datasets.fhir.r4.base.entities.bundle.BundleContentHelper;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.searches.SearchNameEnum;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -71,6 +72,9 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
 
     @Inject
     private DocumentReferenceAccessor virtualDBAccessor;
+
+    @Inject
+    private BundleContentHelper bundleHelper;
 
     @Inject
     private OperationOutcomeGenerator outcomeGenerator;
@@ -138,11 +142,17 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
     //
 
     @Search()
-    public DocumentReference findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
+    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
-        DocumentReference outcome = (DocumentReference) findResourceViaIdentifier(identifierToSearchFor);
-        return(outcome);
+        Resource outcomeResource = findResourceViaIdentifier(identifierToSearchFor);
+        if(outcomeResource.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcomeResource;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = bundleHelper.buildSearchResponseBundle(outcomeResource);
+            return(outcomeBundle);
+        }
     }
 
     @Search()

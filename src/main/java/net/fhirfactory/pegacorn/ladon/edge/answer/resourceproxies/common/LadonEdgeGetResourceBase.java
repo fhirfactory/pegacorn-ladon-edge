@@ -27,6 +27,9 @@ import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBAction
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import org.hl7.fhir.r4.model.*;
 
+import java.sql.Date;
+import java.time.Instant;
+
 public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
     private static String parameterSepeator = "|";
 
@@ -77,9 +80,6 @@ public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
             getLogger().warn(".tokenParam2Identifier(): Parameter identifierParam (TokenParam) is null");
             return(null);
         }
-        String identifierTypeSystemValue = identifierParam.getSystem();
-        String identifierTypeCodeValue = null;
-        String identifierValue = null;
         boolean hasAppropriateModifier = false;
         if(identifierParam.getModifier() == null) {
             getLogger().error(".tokenParam2Identifier(): There is no modifier present");
@@ -97,26 +97,31 @@ public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
                 hasAppropriateModifier = true;
             }
         }
+        String identifierValue = null;
+        Identifier generatedIdentifier = new Identifier();
         if(hasAppropriateModifier){
+            String identifierTypeSystemValue = identifierParam.getSystem();
+            String identifierTypeCodeValue = null;
             String paramValue = identifierParam.getValue();
             String[] values = paramValue.split("\\|");
             identifierTypeCodeValue = values[0];
             identifierValue = values[1];
+            CodeableConcept identifierType = new CodeableConcept();
+            Coding identifierTypeCode = new Coding();
+            identifierTypeCode.setCode(identifierTypeCodeValue);
+            identifierTypeCode.setSystem(identifierTypeSystemValue);
+            identifierType.addCoding(identifierTypeCode);
+            identifierType.setText(identifierTypeSystemValue + ":" + identifierTypeCodeValue);
+            generatedIdentifier.setType(identifierType);
         } 
         else {
+            generatedIdentifier.setSystem(identifierParam.getSystem());
             identifierValue = identifierParam.getValue();
-            identifierTypeCodeValue = "";
         }
-        CodeableConcept identifierType = new CodeableConcept();
-        Coding identifierTypeCode = new Coding();
-        identifierTypeCode.setCode(identifierTypeCodeValue);
-        identifierTypeCode.setSystem(identifierTypeSystemValue);
-        identifierType.addCoding(identifierTypeCode);
-        identifierType.setText(identifierTypeSystemValue + ":" + identifierTypeCodeValue);
-        Identifier generatedIdentifier = new Identifier();
-        generatedIdentifier.setType(identifierType);
         generatedIdentifier.setValue(identifierValue);
         getLogger().debug(".tokenParam2Identifier(): Exit, created Identifier --> {}", generatedIdentifier);
         return(generatedIdentifier);
     }
+
+
 }
