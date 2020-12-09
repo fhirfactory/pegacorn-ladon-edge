@@ -83,7 +83,7 @@ public abstract class LadonEdgeGetResourceBase extends LadonEdgeProxyBase{
         }
         boolean hasAppropriateModifier = false;
         if(identifierParam.getModifier() == null) {
-            getLogger().error(".tokenParam2Identifier(): There is no modifier present");
+            getLogger().trace(".tokenParam2Identifier(): There is no modifier present");
             hasAppropriateModifier = false;
         } else {
             if(identifierParam.getModifier().getValue().equals(TokenParamModifier.OF_TYPE.getValue())){

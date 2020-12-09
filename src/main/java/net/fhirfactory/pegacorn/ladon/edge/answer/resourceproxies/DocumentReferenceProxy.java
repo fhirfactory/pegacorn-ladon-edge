@@ -181,7 +181,7 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
                 (List<? extends Base>) null);
         argumentList.put(docRefDateProperty, theRange);
 
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, SearchNameEnum.DOCUMENT_REFERENCE_DATE_AND_TYPE, argumentList);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().searchUsingCriteria(ResourceType.DocumentReference, SearchNameEnum.DOCUMENT_REFERENCE_DATE_AND_TYPE, argumentList);
 
         if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
             Bundle searchOutcome = (Bundle) outcome.getResource();

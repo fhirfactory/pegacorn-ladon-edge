@@ -74,7 +74,7 @@ public class EndpointProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
      */
     @Create()
     public MethodOutcome createEndpoint(@ResourceParam Endpoint theResource) {
-        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", theResource);
+        LOG.debug(".createEndpoint(): Entry, theResource (Endpoint) --> {}", theResource);
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().createResource(theResource);
         return (outcome);
     }

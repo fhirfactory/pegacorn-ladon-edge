@@ -178,7 +178,7 @@ public class ProcedureProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
                 (List<? extends Base>) null);
         argumentList.put(docRefDateProperty, theRange);
 
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, SearchNameEnum.PROCEDURE_PATIENT_AND_DATE, argumentList);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().searchUsingCriteria(ResourceType.DocumentReference, SearchNameEnum.PROCEDURE_PATIENT_AND_DATE, argumentList);
 
         if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
             Bundle searchOutcome = (Bundle) outcome.getResource();

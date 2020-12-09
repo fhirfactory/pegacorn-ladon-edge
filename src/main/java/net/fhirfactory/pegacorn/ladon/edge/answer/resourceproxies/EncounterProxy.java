@@ -74,7 +74,7 @@ public class EncounterProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
      */
     @Create()
     public MethodOutcome createEncounter(@ResourceParam Encounter theResource) {
-        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", theResource);
+        LOG.debug(".createEncounter(): Entry, theResource (Encounter) --> {}", theResource);
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().createResource(theResource);
         return (outcome);
     }
