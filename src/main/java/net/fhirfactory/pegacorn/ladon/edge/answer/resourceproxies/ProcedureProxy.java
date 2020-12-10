@@ -24,6 +24,7 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.DateRangeParam;
+import ca.uhn.fhir.rest.param.ReferenceParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
@@ -42,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -143,17 +145,17 @@ public class ProcedureProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
         getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
         Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
         Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
-        if(outcome.getResourceType().equals(ResourceType.Bundle)){
-            Bundle outcomeBundle = (Bundle)outcome;
-            return(outcomeBundle);
+        if (outcome.getResourceType().equals(ResourceType.Bundle)) {
+            Bundle outcomeBundle = (Bundle) outcome;
+            return (outcomeBundle);
         } else {
             Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
-            return(outcomeBundle);
+            return (outcomeBundle);
         }
     }
 
-    @Search()
-    public Bundle searchByDateAndSubject(@RequiredParam(name = Procedure.SP_DATE) DateRangeParam theRange, @RequiredParam(name = DocumentReference.SP_PATIENT) TokenParam patientIdentifierParam) {
+    @Search(queryName = "searchProceduresForPatientDuringPeriod")
+    public Bundle searchProcedureSetForPatient(@RequiredParam(name = Procedure.SP_DATE) DateRangeParam theRange, @RequiredParam(name = "subject") TokenParam patientIdentifierParam) {
         LOG.debug(".searchByDateAndSubject(): Entry, DateTimeRange --> {}, Patient --> {}", theRange, patientIdentifierParam);
 
         HashMap<Property, Serializable> argumentList = new HashMap<>(); // TODO Need to replace "Serializable" with something more meaningful and appropriate
