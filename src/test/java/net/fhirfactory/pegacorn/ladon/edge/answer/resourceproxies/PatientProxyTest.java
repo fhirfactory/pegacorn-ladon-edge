@@ -6,7 +6,7 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
 import net.fhirfactory.pegacorn.fhir.r4.samples.PatientSetFactory;
-import net.fhirfactory.pegacorn.util.FhirUtil;
+import net.fhirfactory.pegacorn.util.FHIRContextUtility;
 
 import org.hl7.fhir.r4.model.Patient;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -41,8 +41,11 @@ public class PatientProxyTest {
     @Inject
     private PatientSetFactory patientSet;
 
-    private FhirContext contextR4;
+    @Inject
+    private FHIRContextUtility FHIRContextUtility;
+    
     private IParser parserR4;
+    
     private IGenericClient ladonEdgeClient;
 
     @Deployment(testable=true)
@@ -83,8 +86,8 @@ public class PatientProxyTest {
     @Before
     public void setUp() {
         LOG.debug(".setup(): Entry");
-        contextR4 = FhirUtil.getInstance().getFhirContext();
-        parserR4 = FhirUtil.getInstance().getJsonParser();
+        FhirContext contextR4 = FHIRContextUtility.getFhirContext();
+        parserR4 = FHIRContextUtility.getJsonParser();
         contextR4.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
         ladonEdgeClient = contextR4.newRestfulGenericClient("http://localhost:8080/pegacorn/fhir/r4/");
         LOG.trace(".setUp(): Exit!");

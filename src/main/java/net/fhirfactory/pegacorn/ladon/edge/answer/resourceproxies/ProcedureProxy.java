@@ -23,20 +23,30 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.DateRangeParam;
+import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.searches.SearchNameEnum;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.ProcedureAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.Procedure;
-import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 @ApplicationScoped
 public class ProcedureProxy extends LadonEdgeSynchronousCRUDResourceBase implements IResourceProvider {
@@ -122,5 +132,65 @@ public class ProcedureProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
     public MethodOutcome deleteProcedure(@IdParam IdType resourceId) throws OperationNotSupportedException {
         LOG.debug(".deleteProcedure(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new OperationNotSupportedException("deletion of a Procedure is not supported"));
+    }
+
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = Procedure.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if (outcome.getResourceType().equals(ResourceType.Bundle)) {
+            Bundle outcomeBundle = (Bundle) outcome;
+            return (outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return (outcomeBundle);
+        }
+    }
+
+    @Search(queryName = "searchProceduresForPatientDuringPeriod")
+    public Bundle searchProcedureSetForPatient(@RequiredParam(name = Procedure.SP_DATE) DateRangeParam theRange, @RequiredParam(name = "subject") TokenParam patientIdentifierParam) {
+        LOG.debug(".searchByDateAndSubject(): Entry, DateTimeRange --> {}, Patient --> {}", theRange, patientIdentifierParam);
+
+        HashMap<Property, Serializable> argumentList = new HashMap<>(); // TODO Need to replace "Serializable" with something more meaningful and appropriate
+
+        // First Parameter, the DocumentReference.type
+        Property subjectProperty = new Property(
+                "subject",
+                "Reference",
+                "The person, animal or group on which the procedure was performed.",
+                0,
+                1,
+                (List<? extends Base>) null);
+        argumentList.put(subjectProperty, patientIdentifierParam);
+        // Second Parameter, the DocumentReference.date (expressed as a Period, where the date is to be in-between)
+        Period searchPeriod = new Period();
+        Property docRefDateProperty = new Property(
+                "performed",
+                "dateTime",
+                "Estimated or actual date, date-time, period, or age when the procedure was performed. Allows a period to support complex procedures that span more than one date, and also allows for the length of the procedure to be captured.",
+                0,
+                1,
+                (List<? extends Base>) null);
+        argumentList.put(docRefDateProperty, theRange);
+
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().searchUsingCriteria(ResourceType.DocumentReference, SearchNameEnum.PROCEDURE_PATIENT_AND_DATE, argumentList);
+
+        if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
+            Bundle searchOutcome = (Bundle) outcome.getResource();
+            return (searchOutcome);
+        } else {
+            Bundle outputBundle = new Bundle();
+            outputBundle.setType(Bundle.BundleType.SEARCHSET);
+            outputBundle.setTimestamp(Date.from(Instant.now()));
+            outputBundle.setTotal(0);
+            return (outputBundle);
+        }
     }
 }

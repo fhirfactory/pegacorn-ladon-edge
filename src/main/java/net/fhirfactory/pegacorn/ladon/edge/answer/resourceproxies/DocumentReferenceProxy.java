@@ -21,12 +21,33 @@
  */
 package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
-import ca.uhn.fhir.model.api.IQueryParameterType;
-import ca.uhn.fhir.rest.annotation.*;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.naming.OperationNotSupportedException;
+
+import net.fhirfactory.pegacorn.datasets.fhir.r4.base.entities.bundle.BundleContentHelper;
+import net.fhirfactory.pegacorn.ladon.model.virtualdb.searches.SearchNameEnum;
+import org.hl7.fhir.r4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ca.uhn.fhir.rest.annotation.Create;
+import ca.uhn.fhir.rest.annotation.Delete;
+import ca.uhn.fhir.rest.annotation.IdParam;
+import ca.uhn.fhir.rest.annotation.Read;
+import ca.uhn.fhir.rest.annotation.RequiredParam;
+import ca.uhn.fhir.rest.annotation.ResourceParam;
+import ca.uhn.fhir.rest.annotation.Search;
+import ca.uhn.fhir.rest.annotation.Update;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
-import ca.uhn.fhir.rest.param.TokenParamModifier;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
@@ -34,18 +55,6 @@ import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBAction
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.DocumentReferenceAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.naming.OperationNotSupportedException;
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 
 @ApplicationScoped
 public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase implements IResourceProvider {
@@ -63,6 +72,9 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
 
     @Inject
     private DocumentReferenceAccessor virtualDBAccessor;
+
+    @Inject
+    private BundleContentHelper bundleHelper;
 
     @Inject
     private OperationOutcomeGenerator outcomeGenerator;
@@ -123,6 +135,26 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
         throw (new OperationNotSupportedException("deletion of a DocumentReference is not supported"));
     }
 
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Resource outcomeResource = findResourceViaIdentifier(identifierToSearchFor);
+        if(outcomeResource.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcomeResource;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = bundleHelper.buildSearchResponseBundle(outcomeResource);
+            return(outcomeBundle);
+        }
+    }
+
     @Search()
     public Bundle searchByDateAndType(@RequiredParam(name = DocumentReference.SP_DATE) DateRangeParam theRange, @RequiredParam(name = DocumentReference.SP_TYPE) TokenParam docRefType) {
         LOG.debug(".searchByDateAndType(): Entry, DateTimeRange --> {}, Type --> {}", theRange, docRefType);
@@ -149,36 +181,12 @@ public class DocumentReferenceProxy extends LadonEdgeSynchronousCRUDResourceBase
                 (List<? extends Base>) null);
         argumentList.put(docRefDateProperty, theRange);
 
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResourcesViaSearchCriteria(ResourceType.DocumentReference, argumentList);
+        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().searchUsingCriteria(ResourceType.DocumentReference, SearchNameEnum.DOCUMENT_REFERENCE_DATE_AND_TYPE, argumentList);
 
         if (outcome.getStatusEnum() == VirtualDBActionStatusEnum.SEARCH_FINISHED) {
             Bundle searchOutcome = (Bundle) outcome.getResource();
             return (searchOutcome);
         } else {
-            Bundle outputBundle = new Bundle();
-            outputBundle.setType(Bundle.BundleType.SEARCHSET);
-            outputBundle.setTimestamp(Date.from(Instant.now()));
-            outputBundle.setTotal(0);
-            return (outputBundle);
-        }
-    }
-
-    @Search()
-    public Bundle findByIdentifier(@RequiredParam(name = DocumentReference.SP_IDENTIFIER) TokenParam identifierParam) {
-        LOG.debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
-
-        Identifier identifierToSearchFor = new Identifier();
-        identifierToSearchFor.setSystem(identifierParam.getSystem());
-        identifierToSearchFor.setValue(identifierParam.getValue());
-
-        VirtualDBMethodOutcome outcome = getVirtualDBAccessor().getResource(identifierToSearchFor);
-
-        if (outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.REVIEW_FINISH) || outcome.getStatusEnum().equals(VirtualDBActionStatusEnum.SEARCH_FINISHED) ) {
-            getLogger().info("findByIdentifier(): search is finished --> all good");
-            Bundle searchOutcome = (Bundle) outcome.getResource();
-            return (searchOutcome);
-        } else {
-            getLogger().info("findByIdentifier(): search is finished --> nothing to see here!");
             Bundle outputBundle = new Bundle();
             outputBundle.setType(Bundle.BundleType.SEARCHSET);
             outputBundle.setTimestamp(Date.from(Instant.now()));

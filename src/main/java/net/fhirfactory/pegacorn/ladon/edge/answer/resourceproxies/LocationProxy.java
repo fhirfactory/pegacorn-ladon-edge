@@ -23,14 +23,14 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.LocationAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.Location;
-import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,5 +122,25 @@ public class LocationProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     public MethodOutcome deleteLocation(@IdParam IdType resourceId) throws OperationNotSupportedException {
         LOG.debug(".deleteLocation(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new OperationNotSupportedException("deletion of a Location is not supported"));
+    }
+
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = Location.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 }
