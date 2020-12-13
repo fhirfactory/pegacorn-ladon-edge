@@ -23,12 +23,10 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
-import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBActionStatusEnum;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.CareTeamAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
@@ -39,10 +37,6 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.naming.OperationNotSupportedException;
-import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 
 @ApplicationScoped
 public class CareTeamProxy extends LadonEdgeSynchronousCRUDResourceBase implements IResourceProvider {
@@ -128,5 +122,25 @@ public class CareTeamProxy extends LadonEdgeSynchronousCRUDResourceBase implemen
     public MethodOutcome deleteCareTeam(@IdParam IdType resourceId) throws OperationNotSupportedException {
         LOG.debug(".deleteCareTeam(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new OperationNotSupportedException("deletion of a CareTeam is not supported"));
+    }
+
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = CareTeam.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 }

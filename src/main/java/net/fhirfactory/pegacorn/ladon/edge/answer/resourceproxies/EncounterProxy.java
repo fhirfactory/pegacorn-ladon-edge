@@ -23,14 +23,14 @@ package net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies;
 
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import net.fhirfactory.pegacorn.datasets.fhir.r4.operationaloutcome.OperationOutcomeGenerator;
 import net.fhirfactory.pegacorn.ladon.edge.answer.resourceproxies.common.LadonEdgeSynchronousCRUDResourceBase;
 import net.fhirfactory.pegacorn.ladon.model.virtualdb.operations.VirtualDBMethodOutcome;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.EncounterAccessor;
 import net.fhirfactory.pegacorn.ladon.virtualdb.accessors.common.AccessorBase;
-import org.hl7.fhir.r4.model.Encounter;
-import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +74,7 @@ public class EncounterProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
      */
     @Create()
     public MethodOutcome createEncounter(@ResourceParam Encounter theResource) {
-        LOG.debug(".createPatient(): Entry, thePatient (Patient) --> {}", theResource);
+        LOG.debug(".createEncounter(): Entry, theResource (Encounter) --> {}", theResource);
         VirtualDBMethodOutcome outcome = getVirtualDBAccessor().createResource(theResource);
         return (outcome);
     }
@@ -122,5 +122,25 @@ public class EncounterProxy extends LadonEdgeSynchronousCRUDResourceBase impleme
     public MethodOutcome deleteEncounter(@IdParam IdType resourceId) throws OperationNotSupportedException {
         LOG.debug(".deleteEncounter(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new OperationNotSupportedException("deletion of a Encounter is not supported"));
+    }
+
+    //
+    //
+    // Support Searches
+    //
+    //
+
+    @Search()
+    public Bundle findByIdentifier(@RequiredParam(name = Encounter.SP_IDENTIFIER) TokenParam identifierParam) {
+        getLogger().debug(".findByIdentifier(): Entry, identifierParam --> {}", identifierParam);
+        Identifier identifierToSearchFor = tokenParam2Identifier(identifierParam);
+        Resource outcome = (Resource) findResourceViaIdentifier(identifierToSearchFor);
+        if(outcome.getResourceType().equals(ResourceType.Bundle)){
+            Bundle outcomeBundle = (Bundle)outcome;
+            return(outcomeBundle);
+        } else {
+            Bundle outcomeBundle = getBundleContentHelper().buildSearchResponseBundle(outcome);
+            return(outcomeBundle);
+        }
     }
 }
